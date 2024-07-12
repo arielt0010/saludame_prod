@@ -34,7 +34,7 @@ const verifyUser = (req, res, next) => {
             if(err){
                 return res.json({Error: "Token is not valid."});
             }else{
-                
+                req.name = decode.name;
                 next();
             }
 
@@ -78,7 +78,7 @@ app.post('/login', (req, res) => {
 })
 
 app.get('/start', verifyUser, (req, res) => {
-    return res.json({Status: "Success"});
+    return res.json({Status: "Success", name:req.name});
 })
 
 app.get('/logout', (req,res) => {

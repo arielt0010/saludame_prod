@@ -20,7 +20,7 @@ const HomeSistema = () => {
     .then(res => {
       if(res.data.Status === "Success"){
         setAuth(true);
-        setName(res.data.usuario)
+        setName(res.data.name)
       }else{
         setAuth(false)
         setMessage(res.data.Error)
