@@ -35,12 +35,36 @@ const verifyUser = (req, res, next) => {
                 return res.json({Error: "Token is not valid."});
             }else{
                 req.name = decode.name;
+                req.rid_fk = decode.rid_fk;
                 next();
             }
 
         })
     }
 }
+const verifyRole = (req, res, next) => {
+    const token = req.cookies.token;
+    if(!token){
+        return res.json({Error: "You are not authenticated"});
+    }else{
+        jwt.verify(token, "jwt-secret-key", (err, decode) => {
+            if(err){
+                return res.json({Error: "Token is not valid."});
+            }else{
+                req.rid_fk = decode.rid_fk;
+                next();
+            }
+
+        })
+    }
+}
+
+const checkRole = (role) => (req, res, next) => {
+    if (req.rid_fk !== role) {
+      return res.status(403).send('Access denied');
+    }
+    next();
+  };
 
 app.post('/register', (req,res) => {
     const q = "insert into usuario(`nombre`,`usuario`,`contraseña`,`rid_fk`) values (?)";
@@ -64,7 +88,8 @@ app.post('/login', (req, res) => {
                 if(err) return res.json({Error: "Password compare error"});
                 if(response){
                     const name = data[0].nombre;
-                    const token = jwt.sign({name}, "jwt-secret-key", {expiresIn: '1h'});
+                    const rid_fk = data[0].rid_fk;
+                    const token = jwt.sign({name, rid_fk}, "jwt-secret-key", {expiresIn: '1h'});
                     res.cookie('token', token);
                     return res.json({Status: "Success"});
                 }else {
@@ -85,6 +110,10 @@ app.get('/logout', (req,res) => {
     res.clearCookie('token');
     return res.json({Status: "Success"});
 })
+
+app.get('/admin-route', verifyUser, verifyRole, checkRole(1), (req, res) => {
+    res.json({Error: "Access denied"});
+  });
 
 app.listen(8081, () => {
     console.log("Backend connected.");
