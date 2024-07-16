@@ -12,7 +12,7 @@ app.use(express());
 app.use(express.json());
 app.use(cors({
     origin: ["http://localhost:3000"],
-    methods: ["POST", "GET", "PUT"],
+    methods: ["POST", "GET", "PUT", "DELETE"],
     credentials: true
 }));
 app.use(cookieParser());
@@ -54,7 +54,6 @@ const verifyRole = (req, res, next) => {
                 req.rid_fk = decode.rid_fk;
                 next();
             }
-
         })
     }
 }
@@ -66,7 +65,7 @@ const checkRole = (role) => (req, res, next) => {
     next();
   };
 
-app.post('/register', (req,res) => {
+app.post('/createUser', (req,res) => {
     const q = "insert into usuario(`nombre`,`usuario`,`contraseña`,`rid_fk`) values (?)";
     bcrypt.hash(req.body.password, salt, (err, hash) => {
         if(err) return res.json({Error: "Error from hashing passsword"});
@@ -104,6 +103,59 @@ app.post('/login', (req, res) => {
 
 app.get('/start', verifyUser, (req, res) => {
     return res.json({Status: "Success", name:req.name});
+})
+
+app.get('/users', verifyUser, checkRole(1), (req,res) => {
+    const q = 'select u.uid as "ID", u.nombre, u.usuario, r.nombre_rol as "Rol" from usuario u join rol r on u.rid_fk = r.rid';
+    db.query(q, (err, result) => {
+        if(err) return res.json({Error: "Error inside server"});
+        return res.json(result);
+    })
+})
+
+app.get('/users/:id', verifyUser, checkRole(1), (req,res) => {
+    const q = 'select * from usuario where uid = ?';
+    const id = req.params.id;
+
+    db.query(q, [id], (err, result) => {
+        if(err) return res.json({Error: "Error inside server"});
+        return res.json(result);
+    })
+})
+
+app.put('/update/:id', (req, res) =>{
+    const id = req.params.id;
+    const { name, user, password, rid_fk } = req.body;
+
+    if (!password) {
+        // Si la contraseña está vacía, actualiza solo los otros campos
+        const q = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `rid_fk` = ? WHERE uid = ?';
+        const values = [name, user, rid_fk, id];
+        db.query(q, values, (err, result) => {
+            if (err) return res.json({ Error: "Error inside server" });
+            return res.json(result);
+        });
+    } else {
+        // Si hay una contraseña, hashearla y actualizar todos los campos
+        bcrypt.hash(password, salt, (err, hash) => {
+            if (err) return res.json({ Error: "Error from hashing password" });
+            const q2 = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `contraseña` = ?, `rid_fk` = ? WHERE uid = ?';
+            const values = [name, user, hash, rid_fk, id];
+            db.query(q2, values, (err, result) => {
+                if (err) return res.json({ Error: "Inserting data error in server" });
+                return res.json(result);
+            });
+        });
+    }
+})
+
+app.delete('/deleteUser/:id', (req, res) => {
+    const q = "delete from usuario where uid = ?"
+    const id = req.params.id;
+    db.query(q, [id], (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        return res.json(result);
+    });
 })
 
 app.get('/logout', (req,res) => {

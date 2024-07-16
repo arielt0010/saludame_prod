@@ -52,7 +52,8 @@ const HomeSistema = () => {
         <div>
           <h3> Hello, {name} con el rol {rid_fk}</h3>
           {rid_fk === 1 && (
-            <button>Administrar Usuarios</button>
+            <button><Link to='/users'>Administrar Usuarios</Link></button>
+             
           )}
           {rid_fk === 3 && (
             <button>Administrar libro de observaciones</button>

@@ -13,18 +13,18 @@ const Register = () => {
   const handleChange = e => {
     setValues(prev=>({...prev, [e.target.name]: e.target.value}))
   }
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const handleSubmit = e => {
     e.preventDefault();
-    axios.post('http://localhost:8081/register', values)
+    axios.post('http://localhost:8081/createUser', values)
     .then(res => {
-      if(res.data.Status === "Success"){
-        navigate("/login")
-      }else{
-        alert(res.data.Error)
-      }
+      console.log(res)
+      navigate("/users")
     })
-    .then(err => console.log(err));
+    .then(err => {
+      console.log(err)
+      navigate("/users")
+    });
   }
 
   return (

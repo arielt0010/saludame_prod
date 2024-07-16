@@ -29,8 +29,8 @@ const Login = () => {
     <div className="auth">
     <h1 className="login"> Usuarios del sistema
       <form action="">
-        <input type="text" placeholder="username" name="user" id=""onChange={handleChange} />
-        <input type="password" placeholder="password" name="password" id="" onChange={handleChange}/>
+        <input type="text" placeholder="username" name="user" id="user"onChange={handleChange} />
+        <input type="password" placeholder="password" name="password" id="pass" onChange={handleChange}/>
         <button onClick={handleSubmit} className='btnRegister'>Registrar</button>
         <button className="btnBack"><Link to="/">Volver a inicio</Link></button>
       </form>
