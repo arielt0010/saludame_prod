@@ -53,10 +53,9 @@ const HomeSistema = () => {
           <h3> Hello, {name} con el rol {rid_fk}</h3>
           {rid_fk === 1 && (
             <button><Link to='/users'>Administrar Usuarios</Link></button>
-             
           )}
           {rid_fk === 3 && (
-            <button>Administrar libro de observaciones</button>
+            <button><Link to='/libros'>Administrar libro de observaciones</Link></button>
           )}
           {rid_fk === 4 && (
             <button>Administrar pagos</button>

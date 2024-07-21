@@ -7,6 +7,8 @@ import HomeSistema from './pages/HomeSistema'
 import Pagos from './pages/Pagos'
 import Users from './pages/Users'
 import UpdateUsers from './pages/UpdateUsers'
+import LibroObservaciones from './pages/LibroObservaciones'
+import UpdateDatosLibroObs from './pages/UpdateDatosLibroObs'
 
 const App = () => {
   return (
@@ -19,6 +21,8 @@ const App = () => {
       <Route path='/pagos' element={<Pagos/>}></Route>
       <Route path='/users' element={<Users/>}></Route>
       <Route path='/updateUser/:id' element={<UpdateUsers/>}></Route>
+      <Route path='/updateRegLibro/:id' element={<UpdateDatosLibroObs/>}></Route>
+      <Route path='/libros' element={<LibroObservaciones/>}></Route>
     </Routes>
     </BrowserRouter>
   )

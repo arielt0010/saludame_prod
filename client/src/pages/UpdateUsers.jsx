@@ -32,7 +32,7 @@ const UpdateUsers = () => {
         .then(res => {
           if(res.data.Status === "Success"){
             window.location.reload()
-            navigate("/users")
+            navigate("/libros")
           }else{
             console.log(res.data.Error)
           }

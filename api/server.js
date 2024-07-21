@@ -57,13 +57,13 @@ const verifyRole = (req, res, next) => {
         })
     }
 }
-
 const checkRole = (role) => (req, res, next) => {
     if (req.rid_fk !== role) {
       return res.status(403).send('Access denied');
     }
     next();
   };
+
 
 app.post('/createUser', (req,res) => {
     const q = "insert into usuario(`nombre`,`usuario`,`contraseña`,`rid_fk`) values (?)";
@@ -105,6 +105,7 @@ app.get('/start', verifyUser, (req, res) => {
     return res.json({Status: "Success", name:req.name});
 })
 
+// consultas usuarios
 app.get('/users', verifyUser, checkRole(1), (req,res) => {
     const q = 'select u.uid as "ID", u.nombre, u.usuario, r.nombre_rol as "Rol" from usuario u join rol r on u.rid_fk = r.rid';
     db.query(q, (err, result) => {
@@ -122,7 +123,6 @@ app.get('/users/:id', verifyUser, checkRole(1), (req,res) => {
         return res.json(result);
     })
 })
-
 app.put('/update/:id', (req, res) =>{
     const id = req.params.id;
     const { name, user, password, rid_fk } = req.body;
@@ -148,7 +148,6 @@ app.put('/update/:id', (req, res) =>{
         });
     }
 })
-
 app.delete('/deleteUser/:id', (req, res) => {
     const q = "delete from usuario where uid = ?"
     const id = req.params.id;
@@ -157,6 +156,71 @@ app.delete('/deleteUser/:id', (req, res) => {
         return res.json(result);
     });
 })
+
+
+
+//consultas libro de observaciones
+
+app.get('/libros', (req,res) => {
+    const q = 'SELECT lid, colegio, gestion, mes FROM libro_observaciones';
+    db.query(q, (err, result) => {
+        if(err) return res.json({Error: "Error inside server"});
+        return res.json(result);
+    })
+})
+
+app.get('/libros/filter' ,(req,res) => {
+        const { colegio, gestion, mes } = req.query;
+        const query = 'SELECT lid FROM libro_observaciones WHERE colegio = ? AND gestion = ? AND mes = ?';
+        db.query(query, [colegio, gestion, mes], (err, results) => {
+          if (err) {
+            console.error('Error fetching libro:', err);
+            res.status(500).json({ error: 'Error en el servidor' });
+          } else if (results.length > 0) {
+            res.json({ lid: results[0].lid });
+          } else {
+            res.status(404).json({ error: 'Libro no encontrado' });
+          }
+        });
+})
+
+//query para ver todos
+app.get('/libros/:lid', verifyUser, checkRole(3), (req,res) => {
+    const q = "select d.did as 'Id', u.Nombre as 'Medico', CONCAT(c.nombre, ' ', c.apellidos) as 'Nombre', c.curso, d.fechaAtendido, d.diagnostico, d.tratamiento, d.observaciones from datos_observaciones d join cliente c on d.cid_fk2 = c.cid join usuario u on d.uid_fk3 = u.uid join libro_observaciones l on d.lid_fk1 = l.lid where l.lid = ?;";
+    const id = req.params.lid;
+
+    db.query(q, [id], (err, result) => {
+        if(err) return res.json({Error: err});
+        return res.json(result);
+    })
+})
+
+//query para ver solo 1 dato
+app.get('/libroOne/:id', (req,res) => {
+    const q = 'select * from datos_observaciones where did = ?';
+    const id = req.params.lid;
+
+    db.query(q, [id], (err, result) => {
+        if(err) return res.json({Error: "Error inside server"});
+        return res.json(result);
+    })
+})
+
+app.put('/updateRegLibro/:id', (req, res) =>{
+    const id = req.params.id;
+    const { fechaAtendido } = req.body;
+
+})
+
+app.delete('/deleteRegLibro/:id', (req, res) => {
+    const q = "delete from datos_observaciones where did = ?"
+    const id = req.params.id;
+    db.query(q, [id], (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        return res.json(result);
+    });
+})
+ 
 
 app.get('/logout', (req,res) => {
     res.clearCookie('token');
