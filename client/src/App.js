@@ -4,11 +4,13 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
 import HomeSistema from './pages/HomeSistema'
-import Pagos from './pages/Pagos'
+import Seguro from './pages/Seguro'
 import Users from './pages/Users'
 import UpdateUsers from './pages/UpdateUsers'
 import LibroObservaciones from './pages/LibroObservaciones'
 import UpdateDatosLibroObs from './pages/UpdateDatosLibroObs'
+import Pagos from './pages/Pagos'
+import CreatePago from './pages/CreatePago'
 
 const App = () => {
   return (
@@ -18,11 +20,13 @@ const App = () => {
       <Route path='/create-user' element={<Register/>}></Route>
       <Route path='/' element={<Home/>}></Route>
       <Route path='/start' element={<HomeSistema/>}></Route>
-      <Route path='/pagos' element={<Pagos/>}></Route>
+      <Route path='/seguro' element={<Seguro/>}></Route>
       <Route path='/users' element={<Users/>}></Route>
       <Route path='/updateUser/:id' element={<UpdateUsers/>}></Route>
       <Route path='/updateRegLibro/:id' element={<UpdateDatosLibroObs/>}></Route>
       <Route path='/libros' element={<LibroObservaciones/>}></Route>
+      <Route path='/pagos' element={<Pagos/>}></Route>
+      <Route path='/createPayment' element={<CreatePago/>}></Route>
     </Routes>
     </BrowserRouter>
   )

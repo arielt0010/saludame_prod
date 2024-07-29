@@ -3,6 +3,10 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import {jwtDecode} from 'jwt-decode';
+import Administrador from '../pages/homepages/Administrador';
+import Medico from '../pages/homepages/Medico';
+import Secretaria from '../pages/homepages/Secretaria';
+
 
 const HomeSistema = () => {
   axios.defaults.withCredentials = true;
@@ -52,13 +56,13 @@ const HomeSistema = () => {
         <div>
           <h3> Hello, {name} con el rol {rid_fk}</h3>
           {rid_fk === 1 && (
-            <button><Link to='/users'>Administrar Usuarios</Link></button>
+            <Administrador></Administrador>
           )}
-          {rid_fk === 3 && (
-            <button><Link to='/libros'>Administrar libro de observaciones</Link></button>
+          {rid_fk === 3 &&(
+            <Medico></Medico>
           )}
           {rid_fk === 4 && (
-            <button>Administrar pagos</button>
+            <Secretaria></Secretaria>
           )}
           <button className='logout' onClick={handleDelete}>Log out</button>
         </div>
@@ -67,6 +71,7 @@ const HomeSistema = () => {
           <h3>{message}</h3>
           <h3>You are not authorized.</h3>
           <Link to='/login'>Login here.</Link>
+          <Link to='/'>Back to home..</Link>
         </div>
       }
 

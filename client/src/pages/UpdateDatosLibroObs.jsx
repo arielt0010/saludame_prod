@@ -11,6 +11,7 @@ const UpdateDatosLibroObs = () => {
     useEffect(() => {
         axios.get('http://localhost:8081/libroOne/' + lid)
         .then(res => {
+            console.log(res.data)
            setValues({...values, fechaAtendido: res.data[0].fechaAtendido, diagnostico: res.data[0].diagnostico, tratamiento : res.data[0].tratamiento, observaciones : res.data[0].observaciones})
         }).catch(err =>console.log(err))
     }, [lid])
@@ -32,7 +33,7 @@ const UpdateDatosLibroObs = () => {
         .then(res => {
           if(res.data.Status === "Success"){
             window.location.reload()
-            navigate("/users")
+            navigate("/libros")
           }else{
             console.log(res.data.Error)
           }
@@ -42,10 +43,10 @@ const UpdateDatosLibroObs = () => {
     return (
     <div> Actualizar registro
         <form action="">
-            <input type="datetime" name="" id="" placeholder='fechaAtendido' onChange={handleChange} value = {values.fechaAtendido} />
-            <input type="text" name="" id="" placeholder='diagnostico' onChange={handleChange} value={values.diagnostico} />
-            <input type="text" name="" id="" placeholder='tratamiento' onChange={handleChange} value={values.tratamiento} />
-            <input type="text" name="" id="" placeholder='observaciones' onChange={handleChange} value={values.observaciones} />
+            <input type="date" name="fechaAtendido" id="" placeholder='fechaAtendido' onChange={handleChange} value = {values.fechaAtendido} />
+            <input type="text" name="diagnostico" id="" placeholder='diagnostico' onChange={handleChange} value={values.diagnostico} />
+            <input type="text" name="tratamiento" id="" placeholder='tratamiento' onChange={handleChange} value={values.tratamiento} />
+            <input type="text" name="observaciones" id="" placeholder='observaciones' onChange={handleChange} value={values.observaciones} />
         </form>
             <button onClick={handleUpdate} className='btnRegister'>Actualizar</button>
             <button className="btnBack"><Link to="/libros">Volver atras</Link></button>

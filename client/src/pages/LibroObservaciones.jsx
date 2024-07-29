@@ -28,7 +28,7 @@ const DropdownSelection = () => {
             const observacionesResponse = await axios.get(`http://localhost:8081/libros/${lid}`);
             setDetails(observacionesResponse.data);
         }catch(err){
-            console.log(err)
+            alert(err)
         }
     }
 
@@ -38,6 +38,7 @@ const DropdownSelection = () => {
         axios.delete('http://localhost:8081/deleteRegLibro/' + ID)
         .then(res => {
             console.log(res)
+            window.location.reload()
             navigate("/libros")
         })
         .catch(err => console.log(err))
@@ -94,7 +95,7 @@ const DropdownSelection = () => {
                                     ))}
                                     <td>
                                         <button className='btnEditar'><Link to={`/updateRegLibro/${detail.Id}`}>Editar</Link></button>
-                                        <button onClick={ () => handleDelete(detail.Id)} className='btnEliminar'><Link to={`/deleteRegLibro/${detail.Id}`}>Eliminar</Link></button>
+                                        <button onClick={() => handleDelete(detail.Id)} className='btnEliminar'><Link to={`/deleteRegLibro/${detail.Id}`}>Eliminar</Link></button>
                                     </td>
                                 </tr>
                             ))}

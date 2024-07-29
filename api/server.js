@@ -36,27 +36,35 @@ const verifyUser = (req, res, next) => {
             }else{
                 req.name = decode.name;
                 req.rid_fk = decode.rid_fk;
+                req.uid = decode.uid;
                 next();
             }
 
         })
     }
 }
-const verifyRole = (req, res, next) => {
-    const token = req.cookies.token;
-    if(!token){
-        return res.json({Error: "You are not authenticated"});
-    }else{
-        jwt.verify(token, "jwt-secret-key", (err, decode) => {
-            if(err){
-                return res.json({Error: "Token is not valid."});
-            }else{
-                req.rid_fk = decode.rid_fk;
-                next();
-            }
-        })
-    }
-}
+const verifyRole = (roles) => {
+    return (req, res, next) => {
+        const token = req.cookies.token;
+        if (!token) {
+            return res.json({ Error: "You are not authenticated" });
+        } else {
+            jwt.verify(token, "jwt-secret-key", (err, decode) => {
+                if (err) {
+                    return res.json({ Error: "Token is not valid." });
+                } else {
+                    if (roles.includes(decode.rid_fk)) {
+                        req.rid_fk = decode.rid_fk;
+                        next();
+                    } else {
+                        return res.json({ Error: "You do not have the required role." });
+                    }
+                }
+            });
+        }
+    };
+};
+
 const checkRole = (role) => (req, res, next) => {
     if (req.rid_fk !== role) {
       return res.status(403).send('Access denied');
@@ -88,7 +96,8 @@ app.post('/login', (req, res) => {
                 if(response){
                     const name = data[0].nombre;
                     const rid_fk = data[0].rid_fk;
-                    const token = jwt.sign({name, rid_fk}, "jwt-secret-key", {expiresIn: '1h'});
+                    const uid = data[0].uid;
+                    const token = jwt.sign({name, rid_fk, uid}, "jwt-secret-key", {expiresIn: '1h'});
                     res.cookie('token', token);
                     return res.json({Status: "Success"});
                 }else {
@@ -105,7 +114,8 @@ app.get('/start', verifyUser, (req, res) => {
     return res.json({Status: "Success", name:req.name});
 })
 
-// consultas usuarios
+/* CONSULTAS USUARIOS */
+
 app.get('/users', verifyUser, checkRole(1), (req,res) => {
     const q = 'select u.uid as "ID", u.nombre, u.usuario, r.nombre_rol as "Rol" from usuario u join rol r on u.rid_fk = r.rid';
     db.query(q, (err, result) => {
@@ -157,15 +167,18 @@ app.delete('/deleteUser/:id', (req, res) => {
     });
 })
 
-
-
-//consultas libro de observaciones
+/* CONSULTAS LIBRO DE OBSERVACIONES */
 
 app.get('/libros', (req,res) => {
     const q = 'SELECT lid, colegio, gestion, mes FROM libro_observaciones';
     db.query(q, (err, result) => {
-        if(err) return res.json({Error: "Error inside server"});
-        return res.json(result);
+        if(err) 
+            return res.json({Error: "Error inside server"});
+        else if (result.length > 0){
+            return res.json(result);
+        } else {
+            res.status(404).json({Error: 'No existen datos' });
+        }
     })
 })
 
@@ -190,8 +203,9 @@ app.get('/libros/:lid', verifyUser, checkRole(3), (req,res) => {
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
-        if(err) return res.json({Error: err});
-        return res.json(result);
+        if(err) {return res.json({Error: err});}
+        else if (result.length > 0){return res.json(result);}
+        else return (res.json({Error: "No existen datos"}))
     })
 })
 
@@ -207,9 +221,14 @@ app.get('/libroOne/:id', (req,res) => {
 })
 
 app.put('/updateRegLibro/:id', (req, res) =>{
-    const id = req.params.id;
-    const { fechaAtendido } = req.body;
-
+    const id = req.params.lid;
+    const { fechaAtendido, diagnostico, tratamiento, observaciones} = req.body;
+    const q = 'UPDATE datos_observaciones SET `fechaAtendido` = ?, `diagnostico` = ?, `tratamiento` = ?, `observaciones` = ? WHERE did = ?';
+    const values = [fechaAtendido, diagnostico, tratamiento, observaciones, id];
+    db.query(q, values, (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        return res.json(result);
+    });
 })
 
 app.delete('/deleteRegLibro/:id', (req, res) => {
@@ -220,8 +239,86 @@ app.delete('/deleteRegLibro/:id', (req, res) => {
         return res.json(result);
     });
 })
- 
 
+/* CONSULTA DE PAGOS */
+
+//query para ver todos
+app.get('/pagos',(req, res) => {
+    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidos) as 'Nombre', c.colegio, c.curso, p.gestion, p.fechaPago, p.monto, p.formaPago, u.usuario, p.fechaAgregado, p.comprobantePago from pagos p join cliente c on p.cid_fk1 = c.cid join usuario u on p.uid_fk2 = u.uid;";
+    db.query(q, (err, result) => {
+        if(err) return res.json({Error: "Error inside server"});
+        else if (result.length > 0) {
+            return res.json(result);
+        }else{
+            res.status(404).json({Error: 'No existen pagos' });
+        }
+    })
+})
+
+//filtrar
+app.get('/pagos/filter' ,(req,res) => {
+    const { colegio, gestion } = req.query;
+    const query = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidos) as 'Nombre', c.colegio, c.curso, p.gestion, p.fechaPago, p.monto, p.formaPago, u.usuario, p.fechaAgregado, p.comprobantePago from pagos p join cliente c on p.cid_fk1 = c.cid join usuario u on p.uid_fk2 = u.uid where colegio = ? and gestion = ?;";
+    db.query(query, [colegio, gestion, mes], (err, results) => {
+      if (err) {
+        console.error('Error fetching pago:', err);
+        res.status(500).json({Error: 'Error en el servidor' });
+      } else if (results.length > 0) {
+        res.json({ lid: results[0].lid });
+      } else {
+        res.status(404).json({Error: 'Pago no encontrado' });
+      }
+    });
+})
+
+//eliminar
+app.delete('/deletePayment/:id', (req, res) => {
+    const q = "delete from pagos where pid = ?"
+    const id = req.params.id;
+    db.query(q, [id], (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        return res.json(result);
+    });
+})
+
+//buscar al cliente para registrar pago
+app.get('/searchCliente',(req, res) => {
+    const {nombre, apellidos} = req.query;
+    const q = "select cid, nombre, apellidos from cliente where nombre = ? and apellidos = ?;";
+    db.query(q, [nombre, apellidos], (err, result) => {
+        if(err) return res.json({Error: "Error inside server"});
+        else if (result.length > 0) {
+            return res.json(result);
+        }else{
+            res.status(404).json({Error: 'No existen pagos' });
+        }
+    })
+})
+
+//insertar pago
+app.post('/createPayment', (req, res) => {
+    const { gestion, fechaPago, formaPago, monto, cid_fk, uid_fk2} = req.body;
+
+    const fechaAgregado = new Date(); // Fecha actual del sistema
+    const query = `
+      INSERT INTO pagos (gestion, fechaPago, formaPago, monto, fechaAgregado, cid_fk1, uid_fk2)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+  
+    db.query(query, [gestion, fechaPago, formaPago, monto, fechaAgregado, cid_fk, uid_fk2], (err, result) => {
+      if (err) {
+        console.error('Error al insertar el pago:', err);
+        res.status(500).json({ error: 'Error en la base de datos' });
+        return;
+      }
+      res.status(201).json({ message: 'Pago insertado correctamente', pagoId: result.insertId });
+    });
+  });
+
+
+/* OTRAS CONSULTAS */
+
+//logout
 app.get('/logout', (req,res) => {
     res.clearCookie('token');
     return res.json({Status: "Success"});
