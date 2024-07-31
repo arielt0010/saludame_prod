@@ -219,18 +219,32 @@ app.get('/libros/:lid', verifyUser, (req,res) => {
 //query para ver solo 1 dato
 app.get('/libroOne/:id', (req,res) => {
     const q = 'select * from datos_observacion where did = ?';
-    const id = req.params.lid;
+    const lid = req.params.lid;
+    console.log(lid)
 
-    db.query(q, [id], (err, result) => {
+    db.query(q, [lid], (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         return res.json(result);
     })
 })
 
+//crear datos libro de observaciones
+app.post('/createRegistro/:lid', (req, res) => {
+    const q = "INSERT INTO datos_observacion (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `cidFK2`, `uidFK3`, `lidFK1`) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    const values = [req.body.fechaAtendido, req.body.diagnostico, req.body.tratamiento, req.body.observaciones, req.body.cidFK2, req.body.uidFK3, req.body.lidFK1];
+    db.query(q, values, (err, result) => {
+        if (err) {
+            console.error('Error insertando datos:', err);
+            return res.json({ Error: "Inserting data error in server" });
+        }
+        return res.json({ Status: "Success" });
+    });
+})
+//actualizar datos libro de observaciones
 app.put('/updateRegLibro/:id', (req, res) =>{
     const id = req.params.lid;
     const { fechaAtendido, diagnostico, tratamiento, observaciones} = req.body;
-    const q = 'UPDATE datos_observaciones SET `fechaAtendido` = ?, `diagnostico` = ?, `tratamiento` = ?, `observaciones` = ? WHERE did = ?';
+    const q = 'UPDATE datos_observacion SET `fechaAtendido` = ?, `diagnostico` = ?, `tratamiento` = ?, `observaciones` = ? WHERE did = ?';
     const values = [fechaAtendido, diagnostico, tratamiento, observaciones, id];
     db.query(q, values, (err, result) => {
         if (err) return res.json({ Error: "Error inside server" });
@@ -238,6 +252,7 @@ app.put('/updateRegLibro/:id', (req, res) =>{
     });
 })
 
+//eliminar datos libro de observaciones
 app.delete('/deleteRegLibro/:id', (req, res) => {
     const q = "delete from datos_observacion where did = ?"
     const id = req.params.id;
@@ -251,7 +266,7 @@ app.delete('/deleteRegLibro/:id', (req, res) => {
 
 //query para ver todos
 app.get('/pagos',(req, res) => {
-    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidos) as 'Nombre', c.colegio, c.curso, p.gestion, p.fechaPago, p.monto, p.formaPago, u.usuario, p.fechaAgregado, p.comprobantePago from pagos p join cliente c on p.cid_fk1 = c.cid join usuario u on p.uid_fk2 = u.uid;";
+    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre', col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid"; 
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         else if (result.length > 0) {
@@ -265,8 +280,8 @@ app.get('/pagos',(req, res) => {
 //filtrar
 app.get('/pagos/filter' ,(req,res) => {
     const { colegio, gestion } = req.query;
-    const query = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidos) as 'Nombre', c.colegio, c.curso, p.gestion, p.fechaPago, p.monto, p.formaPago, u.usuario, p.fechaAgregado, p.comprobantePago from pagos p join cliente c on p.cid_fk1 = c.cid join usuario u on p.uid_fk2 = u.uid where colegio = ? and gestion = ?;";
-    db.query(query, [colegio, gestion, mes], (err, results) => {
+    const query = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre', col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid where col.nombre = ? and p.gestion = ?";
+    db.query(query, [colegio, gestion], (err, results) => {
       if (err) {
         console.error('Error fetching pago:', err);
         res.status(500).json({Error: 'Error en el servidor' });
@@ -280,7 +295,7 @@ app.get('/pagos/filter' ,(req,res) => {
 
 //eliminar
 app.delete('/deletePayment/:id', (req, res) => {
-    const q = "delete from pagos where pid = ?"
+    const q = "delete from pago where pid = ?"
     const id = req.params.id;
     db.query(q, [id], (err, result) => {
         if (err) return res.json({ Error: "Error inside server" });
@@ -288,11 +303,11 @@ app.delete('/deletePayment/:id', (req, res) => {
     });
 })
 
-//buscar al cliente para registrar pago
+//buscar al cliente para registrar pago y registrar datos libro de observaciones
 app.get('/searchCliente',(req, res) => {
-    const {nombre, apellidos} = req.query;
-    const q = "select cid, nombre, apellidos from cliente where nombre = ? and apellidos = ?;";
-    db.query(q, [nombre, apellidos], (err, result) => {
+    const {nombre, apellidoPaterno, apellidoMaterno} = req.query;
+    const q = "select cid, nombre, apellidoPaterno, apellidoMaterno from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ?;";
+    db.query(q, [nombre, apellidoPaterno, apellidoMaterno], (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         else if (result.length > 0) {
             return res.json(result);
@@ -308,7 +323,7 @@ app.post('/createPayment', (req, res) => {
 
     const fechaAgregado = new Date(); // Fecha actual del sistema
     const query = `
-      INSERT INTO pagos (gestion, fechaPago, formaPago, monto, fechaAgregado, cid_fk1, uid_fk2)
+      INSERT INTO pago (gestion, fechaPago, formaPago, monto, fechaAgregado, cidFK1, uidFK2)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
   

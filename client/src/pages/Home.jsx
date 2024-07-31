@@ -15,7 +15,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-6 space-y-6">
-      <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-4" /> {/* Ajusta el ancho según sea necesario */}
+      <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-4" />
       <h1 className="text-3xl font-bold text-[#063255]">Bienvenid@.</h1>
       <div className="flex flex-col space-y-4 w-full max-w-md">
         <Link to="/login">

@@ -12,6 +12,7 @@ import LibroObservaciones from './pages/LibroObservaciones'
 import UpdateDatosLibroObs from './pages/UpdateDatosLibroObs'
 import Pagos from './pages/Pagos'
 import CreatePago from './pages/CreatePago'
+import CreateDatoLibro from './pages/CreateDatoLibro'
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
       <Route path='/libros' element={<LibroObservaciones/>}></Route>
       <Route path='/pagos' element={<Pagos/>}></Route>
       <Route path='/createPayment' element={<CreatePago/>}></Route>
+      <Route path='/createRegistro/:lid' element={<CreateDatoLibro/>}></Route>
     </Routes>
     </BrowserRouter>
   )
