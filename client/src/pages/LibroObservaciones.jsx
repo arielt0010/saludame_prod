@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 const DropdownSelection = () => {
     axios.defaults.withCredentials = true;
     const [data, setData] = useState([]);
-    const [colegio, setColegio] = useState('');
+    const [nombre, setNombre] = useState('');
     const [gestion, setGestion] = useState('');
     const [mes, setMes] = useState('');
     const [details, setDetails] = useState(null);   //detalles del libro de observaciones
@@ -14,6 +14,7 @@ const DropdownSelection = () => {
         // Obtener los datos del backend
         axios.get('http://localhost:8081/libros')
             .then(response => {
+                console.log(response.data)
                 setData(response.data);
             })
             .catch(error => {
@@ -23,8 +24,9 @@ const DropdownSelection = () => {
 
     const handleSubmit = async () => {
         try{
-            const res = await axios.get(`http://localhost:8081/libros/filter?colegio=${colegio}&gestion=${gestion}&mes=${mes}`);
+            const res = await axios.get(`http://localhost:8081/libros/filter?colegio=${nombre}&gestion=${gestion}&mes=${mes}`);
             const lid = res.data.lid;
+            console.log(lid)
             const observacionesResponse = await axios.get(`http://localhost:8081/libros/${lid}`);
             setDetails(observacionesResponse.data);
         }catch(err){
@@ -48,10 +50,10 @@ const DropdownSelection = () => {
         <div>
             <div>
                 <label>Colegio:</label>
-                <select value={colegio} onChange={(e) => setColegio(e.target.value)}>
+                <select value={nombre} onChange={(e) => setNombre(e.target.value)}>
                     <option value="">Seleccione un colegio</option>
-                    {Array.from(new Set(data.map(item => item.colegio))).map(colegio => (
-                        <option key={colegio} value={colegio}>{colegio}</option>
+                    {Array.from(new Set(data.map(item => item.nombre))).map(nombre => (
+                        <option key={nombre} value={nombre}>{nombre}</option>
                     ))}
                 </select>
             </div>

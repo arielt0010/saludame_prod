@@ -35,7 +35,7 @@ const verifyUser = (req, res, next) => {
                 return res.json({Error: "Token is not valid."});
             }else{
                 req.name = decode.name;
-                req.rid_fk = decode.rid_fk;
+                req.ridFK = decode.ridFK;
                 req.uid = decode.uid;
                 next();
             }
@@ -53,8 +53,8 @@ const verifyRole = (roles) => {
                 if (err) {
                     return res.json({ Error: "Token is not valid." });
                 } else {
-                    if (roles.includes(decode.rid_fk)) {
-                        req.rid_fk = decode.rid_fk;
+                    if (roles.includes(decode.ridFK)) {
+                        req.ridFK = decode.ridFK;
                         next();
                     } else {
                         return res.json({ Error: "You do not have the required role." });
@@ -65,25 +65,13 @@ const verifyRole = (roles) => {
     };
 };
 
+//verificar rol de usuario
 const checkRole = (role) => (req, res, next) => {
-    if (req.rid_fk !== role) {
-      return res.status(403).send('Access denied');
+    if (req.ridFK !== role) {
+      return res.status(403).json('Access denied');
     }
     next();
   };
-
-
-app.post('/createUser', (req,res) => {
-    const q = "insert into usuario(`nombre`,`usuario`,`contraseña`,`rid_fk`) values (?)";
-    bcrypt.hash(req.body.password, salt, (err, hash) => {
-        if(err) return res.json({Error: "Error from hashing passsword"});
-        const values = [req.body.name, req.body.user, hash, req.body.rid_fk];
-        db.query(q, [values], (err, result) => {
-            if(err) return res.json({Error: "Inserting data error in server"});
-            return res.json({Status: "Success"});
-        })
-    }); 
-})
 
 app.post('/login', (req, res) => {
     const q  = "select * from usuario where usuario = ?";
@@ -95,9 +83,9 @@ app.post('/login', (req, res) => {
                 if(err) return res.json({Error: "Password compare error"});
                 if(response){
                     const name = data[0].nombre;
-                    const rid_fk = data[0].rid_fk;
+                    const ridFK = data[0].ridFK;
                     const uid = data[0].uid;
-                    const token = jwt.sign({name, rid_fk, uid}, "jwt-secret-key", {expiresIn: '1h'});
+                    const token = jwt.sign({name, ridFK, uid}, "jwt-secret-key", {expiresIn: '1h'});
                     res.cookie('token', token);
                     return res.json({Status: "Success"});
                 }else {
@@ -117,7 +105,7 @@ app.get('/start', verifyUser, (req, res) => {
 /* CONSULTAS USUARIOS */
 
 app.get('/users', verifyUser, checkRole(1), (req,res) => {
-    const q = 'select u.uid as "ID", u.nombre, u.usuario, r.nombre_rol as "Rol" from usuario u join rol r on u.rid_fk = r.rid';
+    const q = 'select u.uid as "ID", u.nombre, u.apellidoPaterno, u.apellidoMaterno, u.usuario, r.nombreRol as "Rol", case when u.estado = 1 then "Activo" else "Inactivo" end as "Estado" from usuario u join rol r on u.ridFK = r.rid';
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         return res.json(result);
@@ -133,14 +121,33 @@ app.get('/users/:id', verifyUser, checkRole(1), (req,res) => {
         return res.json(result);
     })
 })
-app.put('/update/:id', (req, res) =>{
+
+app.post('/createUser', checkRole(1), (req, res) => {
+    const q = "INSERT INTO usuario(`nombre`, `apellidoPaterno`, `apellidoMaterno`, `usuario`, `contraseña`, `ridFK`, `estado`) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        bcrypt.hash(req.body.password, salt, (err, hash) => {
+        if (err) {
+            console.error('Error hashing password:', err);
+            return res.json({ Error: "Error from hashing password" });
+        }
+        const values = [req.body.name, req.body.apellidoPaterno, req.body.apellidoMaterno, req.body.user, hash, req.body.ridFK, req.body.estado];
+        db.query(q, values, (err, result) => {
+            if (err) {
+                console.error('Error inserting data:', err);
+                return res.json({ Error: "Inserting data error in server" });
+            }
+            return res.json({ Status: "Success" });
+        });
+    });
+})
+
+app.put('/update/:id', checkRole(1), (req, res) =>{
     const id = req.params.id;
-    const { name, user, password, rid_fk } = req.body;
+    const { name, user, password, ridFK, estado, apellidoPaterno, apellidoMaterno } = req.body;
 
     if (!password) {
         // Si la contraseña está vacía, actualiza solo los otros campos
-        const q = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `rid_fk` = ? WHERE uid = ?';
-        const values = [name, user, rid_fk, id];
+        const q = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `ridFK` = ?, `estado` = ?, `apellidoPaterno` = ?, `apellidoMaterno` = ? WHERE uid = ?';
+        const values = [name, user, ridFK, estado, apellidoPaterno, apellidoMaterno, id];
         db.query(q, values, (err, result) => {
             if (err) return res.json({ Error: "Error inside server" });
             return res.json(result);
@@ -149,8 +156,8 @@ app.put('/update/:id', (req, res) =>{
         // Si hay una contraseña, hashearla y actualizar todos los campos
         bcrypt.hash(password, salt, (err, hash) => {
             if (err) return res.json({ Error: "Error from hashing password" });
-            const q2 = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `contraseña` = ?, `rid_fk` = ? WHERE uid = ?';
-            const values = [name, user, hash, rid_fk, id];
+            const q2 = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `contraseña` = ?, `ridFK` = ? , `estado` = ?, `apellidoPaterno` = ?, `apellidoMaterno` = ? WHERE uid = ?';
+            const values = [name, user, hash, ridFK, estado, apellidoPaterno, apellidoMaterno, id];
             db.query(q2, values, (err, result) => {
                 if (err) return res.json({ Error: "Inserting data error in server" });
                 return res.json(result);
@@ -158,7 +165,7 @@ app.put('/update/:id', (req, res) =>{
         });
     }
 })
-app.delete('/deleteUser/:id', (req, res) => {
+app.delete('/deleteUser/:id', checkRole(1), (req, res) => {
     const q = "delete from usuario where uid = ?"
     const id = req.params.id;
     db.query(q, [id], (err, result) => {
@@ -170,7 +177,7 @@ app.delete('/deleteUser/:id', (req, res) => {
 /* CONSULTAS LIBRO DE OBSERVACIONES */
 
 app.get('/libros', (req,res) => {
-    const q = 'SELECT lid, colegio, gestion, mes FROM libro_observaciones';
+    const q = 'select l.lid, col.nombre, l.gestion, l.mes from libro_observacion l join colegio col on l.colegioFK2 = col.cid;';
     db.query(q, (err, result) => {
         if(err) 
             return res.json({Error: "Error inside server"});
@@ -184,7 +191,7 @@ app.get('/libros', (req,res) => {
 
 app.get('/libros/filter' ,(req,res) => {
         const { colegio, gestion, mes } = req.query;
-        const query = 'SELECT lid FROM libro_observaciones WHERE colegio = ? AND gestion = ? AND mes = ?';
+        const query = 'select l.lid from libro_observacion l join colegio col on l.colegioFK2 = col.cid where col.nombre = ? and l.gestion = ? and l.mes = ?';
         db.query(query, [colegio, gestion, mes], (err, results) => {
           if (err) {
             console.error('Error fetching libro:', err);
@@ -198,8 +205,8 @@ app.get('/libros/filter' ,(req,res) => {
 })
 
 //query para ver todos
-app.get('/libros/:lid', verifyUser, checkRole(3), (req,res) => {
-    const q = "select d.did as 'Id', u.Nombre as 'Medico', CONCAT(c.nombre, ' ', c.apellidos) as 'Nombre', c.curso, d.fechaAtendido, d.diagnostico, d.tratamiento, d.observaciones from datos_observaciones d join cliente c on d.cid_fk2 = c.cid join usuario u on d.uid_fk3 = u.uid join libro_observaciones l on d.lid_fk1 = l.lid where l.lid = ?;";
+app.get('/libros/:lid', verifyUser, (req,res) => {
+    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido as 'Fecha atendido', d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from datos_observacion d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_observacion l on d.lidFK1 = l.lid where lid=?";
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
@@ -211,7 +218,7 @@ app.get('/libros/:lid', verifyUser, checkRole(3), (req,res) => {
 
 //query para ver solo 1 dato
 app.get('/libroOne/:id', (req,res) => {
-    const q = 'select * from datos_observaciones where did = ?';
+    const q = 'select * from datos_observacion where did = ?';
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
@@ -232,7 +239,7 @@ app.put('/updateRegLibro/:id', (req, res) =>{
 })
 
 app.delete('/deleteRegLibro/:id', (req, res) => {
-    const q = "delete from datos_observaciones where did = ?"
+    const q = "delete from datos_observacion where did = ?"
     const id = req.params.id;
     db.query(q, [id], (err, result) => {
         if (err) return res.json({ Error: "Error inside server" });

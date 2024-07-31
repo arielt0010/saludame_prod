@@ -1,6 +1,7 @@
 import axios from 'axios'
 import React, { useState } from 'react'
 import {Link, useNavigate} from 'react-router-dom'
+import Logo from '../logoSaludAME.jpg'
 
 const Login = () => {
   axios.defaults.withCredentials = true;
@@ -26,16 +27,41 @@ const Login = () => {
     .then(err => console.log(err))
   }
   return (
-    <div className="auth">
-    <h1 className="login"> Usuarios del sistema
-      <form action="">
-        <input type="text" placeholder="username" name="user" id="user"onChange={handleChange} />
-        <input type="password" placeholder="password" name="password" id="pass" onChange={handleChange}/>
-        <button onClick={handleSubmit} className='btnRegister'>Registrar</button>
-        <button className="btnBack"><Link to="/">Volver a inicio</Link></button>
-      </form>
-    </h1>
-  </div>
+    <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-6">
+      <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-6" /> {/* Ajusta el ancho según sea necesario */}
+      <div className="bg-[#ffffff] p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold text-[#063255] mb-6 text-center">Usuarios del sistema</h1>
+        <form className="flex flex-col space-y-4">
+          <input
+            type="text"
+            placeholder="Usuario"
+            name="user"
+            id="user"
+            onChange={handleChange}
+            className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2] focus:border-[#009ab2]"
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            name="password"
+            id="pass"
+            onChange={handleChange}
+            className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2] focus:border-[#009ab2]"
+          />
+          <button
+            onClick={handleSubmit}
+            className="bg-[#063255] text-white px-6 py-3 rounded-md hover:bg-[#004a6c] transition-colors duration-200 w-full"
+          >
+            Registrar
+          </button>
+          <Link to="/">
+            <button className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] transition-colors duration-200 w-full">
+              Volver a inicio
+            </button>
+          </Link>
+        </form>
+      </div>
+    </div>
   )
 }
 
