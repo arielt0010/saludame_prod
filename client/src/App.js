@@ -1,18 +1,18 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Login from './pages/users/Login';
+import Register from './pages/users/Register';
 import Home from './pages/Home';
 import HomeSistema from './pages/HomeSistema';
-import Seguro from './pages/Seguro';
-import Users from './pages/Users';
-import UpdateUsers from './pages/UpdateUsers';
-import LibroObservaciones from './pages/LibroObservaciones';
-import UpdateDatosLibroObs from './pages/UpdateDatosLibroObs';
-import Pagos from './pages/Pagos';
-import CreatePago from './pages/CreatePago';
-import CreateDatoLibro from './pages/CreateDatoLibro';
+import Seguro from './pages/paymentsClient/Seguro';
+import Users from './pages/users/Users';
+import UpdateUsers from './pages/users/UpdateUsers';
+import LibroObservaciones from './pages/books/LibroObservaciones';
+import UpdateDatosLibroObs from './pages/books/UpdateDatosLibroObs';
+import Pagos from './pages/payments/Pagos';
+import CreatePago from './pages/payments/CreatePago';
+import CreateDatoLibro from './pages/books/CreateDatoLibro';
 import Layout from './components/Layout';
 
 const App = () => {
