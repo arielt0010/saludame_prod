@@ -16,13 +16,6 @@ const HomeSistema = () => {
   const [ridFK, setRidFK] = useState(null)
   const navigate = useNavigate();
 
-  const handleDelete =() => {
-    axios.get('http://localhost:8081/logout')
-    .then(res => {
-      navigate('/')
-    }).catch(err => console.log(err))
-  }
-
   useEffect(()=> {
     axios.get('http://localhost:8081/start')
     .then(res => {
@@ -51,20 +44,15 @@ const HomeSistema = () => {
   }, []);
 
   return (
+    <div>
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
       {auth ? (
         <div>
-          <h3 className="text-xl font-semibold mb-4">Hello, {name} con el rol {ridFK}</h3>
+          <h1 className="text-xl font-semibold mb-4">Hola, {name} </h1>
           {ridFK === 1 && <Administrador />}
-          {ridFK === 3 && <Medico/>}
+          {ridFK === 3 && <Medico />}
           {ridFK === 4 && <Secretaria />}
-          <button
-            onClick={handleDelete}
-            className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors duration-200"
-          >
-            Cerrar sesión
-          </button>
         </div>
       ) : (
         <div>
@@ -85,6 +73,7 @@ const HomeSistema = () => {
         </div>
       )}
     </div>
+  </div>
   </div>
   )
 }

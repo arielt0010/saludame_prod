@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Logo from '../logoSaludAME.jpg'
+import Logo from '../assets/logoSaludAME.jpg'
 import Cookies from 'js-cookie';
 
 const Home = () => {

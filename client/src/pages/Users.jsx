@@ -31,9 +31,10 @@ const Users = () => {
     }
 
     return (
+    <div>
         <div className="min-h-screen bg-[#ffffff] p-6 flex flex-col items-center">
         <div className="w-full max-w-6xl bg-[#f8f9fa] p-6 rounded-lg shadow-md">
-          <h2 className="text-3xl font-bold text-[#063255] mb-4">Usuarios</h2>
+          <h2 className="text-3xl font-bold text-[#063255] mb-4"></h2>
           <div className="flex justify-end mb-4">
             <Link to="/create-user">
               <button className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200">
@@ -85,6 +86,7 @@ const Users = () => {
           </div>
         </div>
       </div>
+    </div>
     )
 }
 
