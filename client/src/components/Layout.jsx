@@ -15,8 +15,7 @@ const Layout = () => {
 
   // Mapa de rutas a títulos
   const routeTitles = {
-    '/': 'Inicio',
-    '/start': 'Inicio del Sistema',
+    '/start': 'Inicio',
     '/seguro': 'Seguro',
     '/users': 'Usuarios',
     '/updateUser': 'Actualizar Usuario',
@@ -25,6 +24,7 @@ const Layout = () => {
     '/pagos': 'Pagos',
     '/createPayment': 'Crear Pago',
     '/createRegistro': 'Crear Registro',
+    '/create-user': 'Crear Usuario',
     '/login': 'Iniciar Sesión',
     '/create-user': 'Crear Usuario',
   };

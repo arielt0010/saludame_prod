@@ -13,7 +13,6 @@ const Users = () => {
                 if (Array.isArray(res.data)) {
                     setData(res.data);
                 } else {
-
                     alert("Error al cargar los datos");
                 }
             })

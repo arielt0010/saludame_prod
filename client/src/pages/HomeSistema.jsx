@@ -22,7 +22,6 @@ const HomeSistema = () => {
       if(res.data.Status === "Success"){
         setAuth(true);
         setName(res.data.name)        
-        console.log(res.data.name)
       }else{
         setAuth(false)
         setMessage(res.data.Error)
@@ -51,22 +50,23 @@ const HomeSistema = () => {
         <div>
           <h1 className="text-xl font-semibold mb-4">Hola, {name} </h1>
           {ridFK === 1 && <Administrador />}
+          {ridFK === 2 && <Administrador />}
           {ridFK === 3 && <Medico />}
           {ridFK === 4 && <Secretaria />}
         </div>
       ) : (
         <div>
           <h3 className="text-lg font-semibold mb-2 text-red-500">{message}</h3>
-          <h3 className="text-md mb-4">You are not authorized.</h3>
+          <h3 className="text-md mb-4">No tienes permisos para acceder a esta página.</h3>
           <div className="space-y-2">
             <Link to="/login">
               <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-200 w-full">
-                Login here
+                Iniciar sesión
               </button>
             </Link>
             <Link to="/">
-              <button className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200 w-full">
-                Back to home
+              <button className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200 w-full pt-4">
+                Volver al inicio
               </button>
             </Link>
           </div>

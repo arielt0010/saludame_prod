@@ -28,11 +28,11 @@ const db = mysql.createConnection({
 const verifyUser = (req, res, next) => {
     const token = req.cookies.token;
     if(!token){
-        return res.json({Error: "You are not authenticated"});
+        return res.json({Error: "No estás autenticado"});
     }else{
         jwt.verify(token, "jwt-secret-key", (err, decode) => {
             if(err){
-                return res.json({Error: "Token is not valid."});
+                return res.json({Error: "Token no válido."});
             }else{
                 req.name = decode.name;
                 req.ridFK = decode.ridFK;
@@ -47,17 +47,17 @@ const verifyRole = (roles) => {
     return (req, res, next) => {
         const token = req.cookies.token;
         if (!token) {
-            return res.json({ Error: "You are not authenticated" });
+            return res.json({ Error: "No estás autenticado" });
         } else {
             jwt.verify(token, "jwt-secret-key", (err, decode) => {
                 if (err) {
-                    return res.json({ Error: "Token is not valid." });
+                    return res.json({ Error: "Token no válido." });
                 } else {
                     if (roles.includes(decode.ridFK)) {
                         req.ridFK = decode.ridFK;
                         next();
                     } else {
-                        return res.json({ Error: "You do not have the required role." });
+                        return res.json({ Error: "No tienes el rol necesario." });
                     }
                 }
             });
@@ -74,13 +74,13 @@ const checkRole = (role) => (req, res, next) => {
   };
 
 app.post('/login', (req, res) => {
-    const q  = "select * from usuario where usuario = ?";
+    const q  = "select * from usuario where usuario = ? and estado = 1";
     const s = req.body.user;
     db.query(q, s, (err, data) => {
-        if(err) return res.json({Error: "Login error in server"});
+        if(err) return res.json({Error: "Error en el servidor"});
         if(data.length > 0) {
             bcrypt.compare(req.body.password, data[0].contraseña, (err, response) => {
-                if(err) return res.json({Error: "Password compare error"});
+                if(err) return res.json({Error: "Error en el servidor"});
                 if(response){
                     const name = data[0].nombre;
                     const ridFK = data[0].ridFK;
@@ -89,11 +89,11 @@ app.post('/login', (req, res) => {
                     res.cookie('token', token);
                     return res.json({Status: "Success"});
                 }else {
-                    return res.json({Error: "Password not matched"})
+                    return res.json({Error: "Error: usuario y/o contraseña incorrecto"})
                 }
             })
         }else{
-            return res.json({Error: "No username found"});
+            return res.json({Error: "Error: usuario y/o contraseña incorrecto"});
         }
     }) 
 })
@@ -122,7 +122,7 @@ app.get('/users/:id', verifyUser, checkRole(1), (req,res) => {
     })
 })
 
-app.post('/createUser', checkRole(1), (req, res) => {
+app.post('/createUser', verifyUser, checkRole(1), (req, res) => {
     const q = "INSERT INTO usuario(`nombre`, `apellidoPaterno`, `apellidoMaterno`, `usuario`, `contraseña`, `ridFK`, `estado`) VALUES (?, ?, ?, ?, ?, ?, ?)";
         bcrypt.hash(req.body.password, salt, (err, hash) => {
         if (err) {
@@ -140,7 +140,7 @@ app.post('/createUser', checkRole(1), (req, res) => {
     });
 })
 
-app.put('/update/:id', checkRole(1), (req, res) =>{
+app.put('/update/:id', verifyUser,checkRole(1), (req, res) =>{
     const id = req.params.id;
     const { name, user, password, ridFK, estado, apellidoPaterno, apellidoMaterno } = req.body;
 
@@ -165,7 +165,7 @@ app.put('/update/:id', checkRole(1), (req, res) =>{
         });
     }
 })
-app.delete('/deleteUser/:id', checkRole(1), (req, res) => {
+app.delete('/deleteUser/:id', verifyUser, checkRole(1), (req, res) => {
     const q = "delete from usuario where uid = ?"
     const id = req.params.id;
     db.query(q, [id], (err, result) => {

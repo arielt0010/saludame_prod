@@ -28,7 +28,7 @@ const Login = () => {
   }
   return (
     <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-6">
-      <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-6" /> {/* Ajusta el ancho según sea necesario */}
+      <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-6" /> 
       <div className="bg-[#ffffff] p-6 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-[#063255] mb-6 text-center">Usuarios del sistema</h1>
         <form className="flex flex-col space-y-4">
@@ -38,7 +38,8 @@ const Login = () => {
             name="user"
             id="user"
             onChange={handleChange}
-            className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2] focus:border-[#009ab2]"
+            className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 
+            focus:ring-[#009ab2] focus:border-[#009ab2]"
           />
           <input
             type="password"
@@ -46,16 +47,19 @@ const Login = () => {
             name="password"
             id="pass"
             onChange={handleChange}
-            className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2] focus:border-[#009ab2]"
+            className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 
+            focus:ring-[#009ab2] focus:border-[#009ab2]"
           />
           <button
             onClick={handleSubmit}
-            className="bg-[#063255] text-white px-6 py-3 rounded-md hover:bg-[#004a6c] transition-colors duration-200 w-full"
+            className="bg-[#063255] text-white px-6 py-3 rounded-md hover:bg-[#004a6c] 
+            transition-colors duration-200 w-full"
           >
             Registrar
           </button>
           <Link to="/">
-            <button className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] transition-colors duration-200 w-full">
+            <button className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] 
+            transition-colors duration-200 w-full">
               Volver a inicio
             </button>
           </Link>
