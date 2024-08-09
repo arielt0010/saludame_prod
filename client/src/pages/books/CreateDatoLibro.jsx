@@ -74,7 +74,7 @@ const CreateDatoLibro = () => {
 
     return (
 <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
-  <h1 className="text-2xl font-bold text-[#063255] mb-6">Buscar Cliente y Agregar Pago</h1>
+  <h1 className="text-2xl font-bold text-[#063255] mb-6">Buscar Cliente y Agregar Registro</h1>
   <div className="space-y-4 mb-6">
     <input
       type="text"

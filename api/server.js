@@ -6,6 +6,8 @@ import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
 
 const salt = 10; 
+const MAX_INTENTOS = 5;
+const TIEMPO_BLOQUEO = 30 * 60 * 1000; // 30 minutos
 
 const app = express();
 app.use(express());
@@ -73,30 +75,62 @@ const checkRole = (role) => (req, res, next) => {
     next();
   };
 
-app.post('/login', (req, res) => {
-    const q  = "select * from usuario where usuario = ? and estado = 1";
+  app.post('/login', (req, res) => {
+    const q = "SELECT * FROM usuario WHERE usuario = ? AND estado = 1";
     const s = req.body.user;
+
     db.query(q, s, (err, data) => {
-        if(err) return res.json({Error: "Error en el servidor"});
-        if(data.length > 0) {
-            bcrypt.compare(req.body.password, data[0].contraseña, (err, response) => {
-                if(err) return res.json({Error: "Error en el servidor"});
-                if(response){
-                    const name = data[0].nombre;
-                    const ridFK = data[0].ridFK;
-                    const uid = data[0].uid;
-                    const token = jwt.sign({name, ridFK, uid}, "jwt-secret-key", {expiresIn: '1h'});
+        if (err) return res.json({ Error: "Error en el servidor" });
+        if (data.length > 0) {
+            const ahora = new Date();
+            const usuario = data[0];
+
+            // Verificar si el usuario está bloqueado
+            if (usuario.tiempoBloqueo && ahora < new Date(usuario.tiempoBloqueo)) {
+                return res.json({ Error: "Cuenta bloqueada. Inténtelo más tarde." });
+            }
+
+            bcrypt.compare(req.body.password, usuario.contraseña, (err, response) => {
+                if (err) return res.json({ Error: "Error en el servidor" });
+
+                if (response) {
+                    // Resetear intentos fallidos si el inicio de sesión es exitoso
+                    const resetIntentos = "UPDATE usuario SET intentosFallidos = 0, tiempoBloqueo = NULL WHERE uid = ?";
+                    db.query(resetIntentos, [usuario.uid], (err) => {
+                        if (err) return res.json({ Error: "Error en el servidor" });
+                    });
+
+                    const name = usuario.nombre;
+                    const ridFK = usuario.ridFK;
+                    const uid = usuario.uid;
+                    const token = jwt.sign({ name, ridFK, uid }, "jwt-secret-key", { expiresIn: '1h' });
+
                     res.cookie('token', token);
-                    return res.json({Status: "Success"});
-                }else {
-                    return res.json({Error: "Error: usuario y/o contraseña incorrecto"})
+                    return res.json({ Status: "Success" });
+
+                } else {
+                    // Incrementar intentos fallidos si la contraseña es incorrecta
+                    let intentosFallidos = usuario.intentosFallidos + 1;
+                    let tiempoBloqueo = null;
+
+                    if (intentosFallidos >= MAX_INTENTOS) {
+                        intentosFallidos = 0;
+                        tiempoBloqueo = new Date(ahora.getTime() + TIEMPO_BLOQUEO);
+                    }
+
+                    const updateIntentos = "UPDATE usuario SET intentosFallidos = ?, tiempoBloqueo = ? WHERE uid = ?";
+                    db.query(updateIntentos, [intentosFallidos, tiempoBloqueo, usuario.uid], (err) => {
+                        if (err) return res.json({ Error: "Error en el servidor" });
+                    });
+
+                    return res.json({ Error: "Error: usuario y/o contraseña incorrecto" });
                 }
-            })
-        }else{
-            return res.json({Error: "Error: usuario y/o contraseña incorrecto"});
+            });
+        } else {
+            return res.json({ Error: "Error: usuario y/o contraseña incorrecto" });
         }
-    }) 
-})
+    });
+});
 
 app.get('/start', verifyUser, (req, res) => {
     return res.json({Status: "Success", name:req.name});
@@ -206,7 +240,7 @@ app.get('/libros/filter' ,(req,res) => {
 
 //query para ver todos
 app.get('/libros/:lid', verifyUser, (req,res) => {
-    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido as 'Fecha atendido', d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from datos_observacion d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_observacion l on d.lidFK1 = l.lid where lid=?";
+    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from datos_observacion d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_observacion l on d.lidFK1 = l.lid where lid=?";
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
@@ -217,9 +251,9 @@ app.get('/libros/:lid', verifyUser, (req,res) => {
 })
 
 //query para ver solo 1 dato
-app.get('/libroOne/:id', (req,res) => {
-    const q = 'select * from datos_observacion where did = ?';
-    const lid = req.params.lid;
+app.get('/libroOne/:lid', (req,res) => {
+    const q = 'select fechaAtendido, diagnostico, tratamiento, observaciones from datos_observacion where did = ?';
+    const {lid} = req.params.lid;
     console.log(lid)
 
     db.query(q, [lid], (err, result) => {
@@ -230,8 +264,10 @@ app.get('/libroOne/:id', (req,res) => {
 
 //crear datos libro de observaciones
 app.post('/createRegistro/:lid', (req, res) => {
-    const q = "INSERT INTO datos_observacion (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `cidFK2`, `uidFK3`, `lidFK1`) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    const values = [req.body.fechaAtendido, req.body.diagnostico, req.body.tratamiento, req.body.observaciones, req.body.cidFK2, req.body.uidFK3, req.body.lidFK1];
+    const q = "INSERT INTO datos_observacion (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `"
+    + "cidFK2`, `uidFK3`, `lidFK1`)VALUES (?, ?, ?, ?, ?, ?, ?)";
+    const values = [req.body.fechaAtendido, req.body.diagnostico, req.body.tratamiento, req.body.observaciones, 
+        req.body.cidFK2, req.body.uidFK3, req.body.lidFK1];
     db.query(q, values, (err, result) => {
         if (err) {
             console.error('Error insertando datos:', err);
@@ -266,7 +302,9 @@ app.delete('/deleteRegLibro/:id', (req, res) => {
 
 //query para ver todos
 app.get('/pagos',(req, res) => {
-    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre', col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid"; 
+    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre', "
+    + "col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p "
+    + "join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid"; 
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         else if (result.length > 0) {
@@ -306,7 +344,8 @@ app.delete('/deletePayment/:id', (req, res) => {
 //buscar al cliente para registrar pago y registrar datos libro de observaciones
 app.get('/searchCliente',(req, res) => {
     const {nombre, apellidoPaterno, apellidoMaterno} = req.query;
-    const q = "select cid, nombre, apellidoPaterno, apellidoMaterno from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ?;";
+    const q = "select cid, nombre, apellidoPaterno, apellidoMaterno" +
+    "from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ?;";
     db.query(q, [nombre, apellidoPaterno, apellidoMaterno], (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         else if (result.length > 0) {

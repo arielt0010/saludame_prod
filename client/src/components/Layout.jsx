@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, matchPath } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
@@ -13,7 +13,7 @@ const Layout = () => {
   const location = useLocation();
   const showNavbarAndSidebar = !['/login', '/' ].includes(location.pathname);
 
-  // Mapa de rutas a títulos
+  // Mapa de rutas a títulos, incluyendo rutas con parámetros
   const routeTitles = {
     '/start': 'Inicio',
     '/seguro': 'Seguro',
@@ -26,10 +26,19 @@ const Layout = () => {
     '/createRegistro': 'Crear Registro',
     '/create-user': 'Crear Usuario',
     '/login': 'Iniciar Sesión',
-    '/create-user': 'Crear Usuario',
   };
 
-  const currentTitle = routeTitles[location.pathname] || 'Título';
+  const getTitle = (pathname) => {
+    for (const route in routeTitles) {
+      if (matchPath(route, pathname)) {
+        console.log(routeTitles[route]);
+        return routeTitles[route];
+      }
+    }
+    return 'Título';
+  };
+
+  const currentTitle = getTitle(location.pathname);
 
   return (
     <div className="flex h-screen flex-col">
