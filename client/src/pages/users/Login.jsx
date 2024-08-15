@@ -55,7 +55,7 @@ const Login = () => {
             className="bg-[#063255] text-white px-6 py-3 rounded-md hover:bg-[#004a6c] 
             transition-colors duration-200 w-full"
           >
-            Registrar
+            Iniciar sesión
           </button>
           <Link to="/">
             <button className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] 

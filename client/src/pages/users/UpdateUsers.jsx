@@ -84,7 +84,7 @@ const UpdateUsers = () => {
             <input
               required
               type="text"
-              placeholder="Username"
+              placeholder="Nombre de usuario"
               name="user"
               onChange={handleChange}
               value={values.user}
@@ -94,7 +94,7 @@ const UpdateUsers = () => {
           <div>
             <input
               type="password"
-              placeholder="Change password? Leave blank if not"
+              placeholder="Contraseña nueva? Dejar en blanco si no"
               name="password"
               onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

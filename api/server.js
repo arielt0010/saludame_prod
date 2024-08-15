@@ -6,8 +6,8 @@ import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
 
 const salt = 10; 
-const MAX_INTENTOS = 5;
-const TIEMPO_BLOQUEO = 30 * 60 * 1000; // 30 minutos
+const MAX_INTENTOS = 3;
+const TIEMPO_BLOQUEO = 10 * 60 * 1000; // 10 minutos
 
 const app = express();
 app.use(express());
@@ -75,7 +75,7 @@ const checkRole = (role) => (req, res, next) => {
     next();
   };
 
-  app.post('/login', (req, res) => {
+app.post('/login', (req, res) => {
     const q = "SELECT * FROM usuario WHERE usuario = ? AND estado = 1";
     const s = req.body.user;
 
@@ -139,13 +139,24 @@ app.get('/start', verifyUser, (req, res) => {
 /* CONSULTAS USUARIOS */
 
 app.get('/users', verifyUser, checkRole(1), (req,res) => {
-    const q = 'select u.uid as "ID", u.nombre, u.apellidoPaterno, u.apellidoMaterno, u.usuario, r.nombreRol as "Rol", case when u.estado = 1 then "Activo" else "Inactivo" end as "Estado" from usuario u join rol r on u.ridFK = r.rid';
+    const q = 'select u.uid as "ID", u.nombre, u.apellidoPaterno, u.apellidoMaterno,'+
+    ' u.usuario, r.nombreRol as "Rol", ' +
+    'case when u.estado = 1 then "Activo" else "Inactivo" end as "Estado" '+
+    'from usuario u join rol r on u.ridFK = r.rid';
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         return res.json(result);
     })
 })
 
+app.delete('/deleteUser/:id', verifyUser, checkRole(1), (req, res) => {
+    const q = "delete from usuario where uid = ?"
+    const id = req.params.id;
+    db.query(q, [id], (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        return res.json(result);
+    });
+})
 app.get('/users/:id', verifyUser, checkRole(1), (req,res) => {
     const q = 'select * from usuario where uid = ?';
     const id = req.params.id;
@@ -199,14 +210,7 @@ app.put('/update/:id', verifyUser,checkRole(1), (req, res) =>{
         });
     }
 })
-app.delete('/deleteUser/:id', verifyUser, checkRole(1), (req, res) => {
-    const q = "delete from usuario where uid = ?"
-    const id = req.params.id;
-    db.query(q, [id], (err, result) => {
-        if (err) return res.json({ Error: "Error inside server" });
-        return res.json(result);
-    });
-})
+
 
 /* CONSULTAS LIBRO DE OBSERVACIONES */
 
@@ -302,13 +306,13 @@ app.delete('/deleteRegLibro/:id', (req, res) => {
 
 //query para ver todos
 app.get('/pagos',(req, res) => {
-    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre', "
-    + "col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p "
-    + "join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid"; 
+    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre',"
+    + " col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p"
+    + " join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid"; 
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         else if (result.length > 0) {
-            return res.json(result);
+            return res.status(200).json(result);
         }else{
             res.status(404).json({Error: 'No existen pagos' });
         }
@@ -336,7 +340,7 @@ app.delete('/deletePayment/:id', (req, res) => {
     const q = "delete from pago where pid = ?"
     const id = req.params.id;
     db.query(q, [id], (err, result) => {
-        if (err) return res.json({ Error: "Error inside server" });
+        if (err) return res.status(500).json({ Error: "Error inside server" });
         return res.json(result);
     });
 })
@@ -345,7 +349,7 @@ app.delete('/deletePayment/:id', (req, res) => {
 app.get('/searchCliente',(req, res) => {
     const {nombre, apellidoPaterno, apellidoMaterno} = req.query;
     const q = "select cid, nombre, apellidoPaterno, apellidoMaterno" +
-    "from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ?;";
+    " from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ?;";
     db.query(q, [nombre, apellidoPaterno, apellidoMaterno], (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         else if (result.length > 0) {
@@ -377,16 +381,78 @@ app.post('/createPayment', (req, res) => {
   });
 
 
+  /* CONSULTAS PAGOS SEGURO */
+
+//verificar el estado de los pagos de un cliente
+app.get('/check-payment-status/:clientId', (req, res) => {
+    const clientId = req.params.clientId;
+    const currentYear = new Date().getFullYear();
+
+    // Consulta para verificar si existe un pago para la gestión actual
+    const checkPaymentQuery = "SELECT * FROM pago p join cliente c on p.cidFK1 = c.cid WHERE c.cid = ? AND p.gestion = ?";
+    
+    db.query(checkPaymentQuery, [clientId, currentYear], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: "Error en el servidor" });
+        }
+
+        if (results.length > 0) {
+            // Si existe un pago para la gestión actual, devolver mensaje de que no hay deudas pendientes
+            res.json({ message: "El cliente no tiene deudas pendientes" });
+        } else {
+            // Si no existe un pago para la gestión actual, devolver mensaje de que hay deudas pendientes
+            const pendingPaymentsQuery = "SELECT DISTINCT p.gestion FROM pago p join cliente c on p.cidFK1 = c.cid WHERE c.cid = ? AND p.gestion < ?";
+            db.query(pendingPaymentsQuery, [clientId, currentYear], (err, pendingResults) => {
+                if (err) {
+                    return res.status(500).json({ error: "Error en el servidor" });
+                }
+
+                if (pendingResults.length > 0) {
+                    // Devolver las gestiones pendientes
+                    res.json({ message: "El cliente tiene deudas pendientes", pendingPayments: pendingResults });
+                } else {
+                    // Si no hay pagos anteriores pendientes, indicar que no hay deudas
+                    res.json({ message: "El cliente no tiene deudas pendientes" });
+                }
+            });
+        }
+    });
+});
+
+
 /* OTRAS CONSULTAS */
+
+app.get('/getColegios', (req, res) => {
+    const q = "SELECT cid, nombre FROM colegio";
+
+    db.query(q, (err, results) => {
+        if (err) return res.status(500).json({ Error: "Error en el servidor" });
+        return res.status(200).json(results);
+    });
+});
+
+//insertar cliente
+app.post('/createClient', (req, res) => {
+    const { nombre, apellidoPaterno, apellidoMaterno, ci, fechaNacimiento, colegio, curso, uidFK1} = req.body;
+    const q = "INSERT INTO cliente (nombre, apellidoPaterno, apellidoMaterno, carnetIdentidad, fechaNacimiento, colegio, curso, tipoAsegurado, uidFK1, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'Asegurado', ?, '1')";
+    db.query(q, [nombre, apellidoPaterno, apellidoMaterno, ci, fechaNacimiento, colegio, curso, uidFK1], (err, result) => {
+        if (err) {
+            console.error('Error al insertar el cliente:', err);
+            res.status(500).json({ error: 'Error en la base de datos' });
+            return;
+        }
+        res.status(201).json({ message: 'Cliente insertado correctamente', clientId: result.insertId });
+    });
+  });
 
 //logout
 app.get('/logout', (req,res) => {
     res.clearCookie('token');
-    return res.json({Status: "Success"});
+    return res.status(200).json({Status: "Success"});
 })
 
 app.get('/admin-route', verifyUser, verifyRole, checkRole(1), (req, res) => {
-    res.json({Error: "Access denied"});
+    res.status(403).json({Error: "Access denied"});
   });
 
 app.listen(8081, () => {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'
 
 const ClienteYPago = () => {
   axios.defaults.withCredentials = true;
@@ -145,9 +145,14 @@ const ClienteYPago = () => {
           </div>
         </div>
       ) : error ? (
+        <div>
         <p className="text-red-500">{error}</p>
+        <p>Es estudiante nuevo? 
+          <Link to="/createClient"> Agregar cliente</Link>
+        </p>
+        </div>
       ) : (
-        <p>No se encontró el cliente</p>
+        <div/>
       )}
       {mensaje && <p className="text-green-500">{mensaje}</p>}
     </div>

@@ -14,6 +14,7 @@ import Pagos from './pages/payments/Pagos';
 import CreatePago from './pages/payments/CreatePago';
 import CreateDatoLibro from './pages/books/CreateDatoLibro';
 import Layout from './components/Layout';
+import CreateClient from './pages/paymentsClient/CreateClient';
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
           <Route path='/libros' element={<LibroObservaciones />} />
           <Route path='/pagos' element={<Pagos />} />
           <Route path='/createPayment' element={<CreatePago />} />
+          <Route path='/createClient' element={<CreateClient />} />
           <Route path='/createRegistro/:lid' element={<CreateDatoLibro />} />
         </Route>
       </Routes>

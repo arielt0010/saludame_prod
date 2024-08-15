@@ -9,6 +9,7 @@ const Navbar = ({ toggleSidebar, isSidebarVisible, title }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const [name, setName] = useState('')
+  const [auth, setAuth] = useState(false)
 
   const handleMenuToggle = () => {
     setMenuOpen(!menuOpen);
@@ -27,7 +28,9 @@ const Navbar = ({ toggleSidebar, isSidebarVisible, title }) => {
       try {
         const decodedToken = jwtDecode(token);
         setName(decodedToken.name);
+        setAuth(true);
       } catch (err) {
+        setAuth(false);
         console.error('Invalid token');
       }
     }
@@ -39,6 +42,7 @@ const Navbar = ({ toggleSidebar, isSidebarVisible, title }) => {
         <FaBars onClick={toggleSidebar} className="cursor-pointer text-2xl mr-4" />
         <h1 className="text-xl">{title}</h1>
       </div>
+      {auth ? (
       <div className="relative">
         <FaUserCircle onClick={handleMenuToggle} className="text-2xl cursor-pointer" />
         {menuOpen && (
@@ -58,6 +62,9 @@ const Navbar = ({ toggleSidebar, isSidebarVisible, title }) => {
           </div>
         )}
       </div>
+      ) : (
+      <div className="relative"/>
+      )}
     </nav>
   );
 };
