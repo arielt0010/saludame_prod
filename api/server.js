@@ -215,7 +215,7 @@ app.put('/update/:id', verifyUser,checkRole(1), (req, res) =>{
 /* CONSULTAS LIBRO DE OBSERVACIONES */
 
 app.get('/libros', (req,res) => {
-    const q = 'select l.lid, col.nombre, l.gestion, l.mes from libro_observacion l join colegio col on l.colegioFK2 = col.cid;';
+    const q = 'select l.lid, col.nombre, l.gestion, l.mes from libro_consulta l join colegio col on l.colegioFK2 = col.cid;';
     db.query(q, (err, result) => {
         if(err) 
             return res.json({Error: "Error inside server"});
@@ -229,7 +229,7 @@ app.get('/libros', (req,res) => {
 
 app.get('/libros/filter' ,(req,res) => {
         const { colegio, gestion, mes } = req.query;
-        const query = 'select l.lid from libro_observacion l join colegio col on l.colegioFK2 = col.cid where col.nombre = ? and l.gestion = ? and l.mes = ?';
+        const query = 'select l.lid from libro_consulta l join colegio col on l.colegioFK2 = col.cid where col.nombre = ? and l.gestion = ? and l.mes = ?';
         db.query(query, [colegio, gestion, mes], (err, results) => {
           if (err) {
             console.error('Error fetching libro:', err);
@@ -243,8 +243,8 @@ app.get('/libros/filter' ,(req,res) => {
 })
 
 //query para ver todos
-app.get('/libros/:lid', verifyUser, (req,res) => {
-    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from datos_observacion d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_observacion l on d.lidFK1 = l.lid where lid=?";
+app.get('/libros/:lid', (req,res) => {
+    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=?";
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
@@ -256,7 +256,7 @@ app.get('/libros/:lid', verifyUser, (req,res) => {
 
 //query para ver solo 1 dato
 app.get('/libroOne/:lid', (req,res) => {
-    const q = 'select fechaAtendido, diagnostico, tratamiento, observaciones from datos_observacion where did = ?';
+    const q = 'select fechaAtendido, diagnostico, tratamiento, observaciones from consulta_medica where did = ?';
     const {lid} = req.params.lid;
     console.log(lid)
 
@@ -268,7 +268,7 @@ app.get('/libroOne/:lid', (req,res) => {
 
 //crear datos libro de observaciones
 app.post('/createRegistro/:lid', (req, res) => {
-    const q = "INSERT INTO datos_observacion (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `"
+    const q = "INSERT INTO consulta_medica (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `"
     + "cidFK2`, `uidFK3`, `lidFK1`)VALUES (?, ?, ?, ?, ?, ?, ?)";
     const values = [req.body.fechaAtendido, req.body.diagnostico, req.body.tratamiento, req.body.observaciones, 
         req.body.cidFK2, req.body.uidFK3, req.body.lidFK1];
@@ -284,7 +284,7 @@ app.post('/createRegistro/:lid', (req, res) => {
 app.put('/updateRegLibro/:id', (req, res) =>{
     const id = req.params.lid;
     const { fechaAtendido, diagnostico, tratamiento, observaciones} = req.body;
-    const q = 'UPDATE datos_observacion SET `fechaAtendido` = ?, `diagnostico` = ?, `tratamiento` = ?, `observaciones` = ? WHERE did = ?';
+    const q = 'UPDATE consulta_medica SET `fechaAtendido` = ?, `diagnostico` = ?, `tratamiento` = ?, `observaciones` = ? WHERE did = ?';
     const values = [fechaAtendido, diagnostico, tratamiento, observaciones, id];
     db.query(q, values, (err, result) => {
         if (err) return res.json({ Error: "Error inside server" });
@@ -294,7 +294,7 @@ app.put('/updateRegLibro/:id', (req, res) =>{
 
 //eliminar datos libro de observaciones
 app.delete('/deleteRegLibro/:id', (req, res) => {
-    const q = "delete from datos_observacion where did = ?"
+    const q = "delete from consulta_medica where did = ?"
     const id = req.params.id;
     db.query(q, [id], (err, result) => {
         if (err) return res.json({ Error: "Error inside server" });
@@ -451,7 +451,7 @@ app.get('/logout', (req,res) => {
     return res.status(200).json({Status: "Success"});
 })
 
-app.get('/admin-route', verifyUser, verifyRole, checkRole(1), (req, res) => {
+app.get('/admin-route', verifyUser, verifyRole, checkRole([1,3]), (req, res) => {
     res.status(403).json({Error: "Access denied"});
   });
 

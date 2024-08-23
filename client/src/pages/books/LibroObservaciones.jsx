@@ -37,15 +37,6 @@ const DropdownSelection = () => {
 
     const navigate = useNavigate();
     
-    const handleDelete = (ID) => {
-        axios.delete('http://localhost:8081/deleteRegLibro/' + ID)
-        .then(res => {
-            console.log(res)
-            navigate("/libros")
-        })
-        .catch(err => console.log(err))
-    }
-
     return (
         <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
         <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
@@ -99,7 +90,7 @@ const DropdownSelection = () => {
           {details && (
             <div className="mt-6">
               <div className="overflow-x-auto">
-              <div className="mb-4">
+              <div className="flex justify-end mb-4">
                 <Link to={`/createRegistro/${lid}`}>
                   <button className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200">
                     Crear registro
@@ -112,7 +103,6 @@ const DropdownSelection = () => {
                       {Object.keys(details[0]).map(key => (
                         <th key={key} className="px-4 py-2 border">{key}</th>
                       ))}
-                      <th className="px-4 py-2 border">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -122,19 +112,7 @@ const DropdownSelection = () => {
                           <td key={idx} className="px-4 py-2 border">{value}</td>
                         ))}
                         <td className="px-4 py-2 border flex space-x-2">
-                          <Link to={`/updateRegLibro/${detail.Id}`}>
-                            <button className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200">
-                              Editar
-                            </button>
-                          </Link>
-                          <Link to={`/deleteRegLibro/${detail.Id}`}>
-                            <button
-                              onClick={() => handleDelete(detail.Id)}
-                              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-800 transition-colors duration-200"
-                            >
-                              Eliminar
-                            </button>
-                          </Link>
+
                         </td>
                       </tr>
                     ))}

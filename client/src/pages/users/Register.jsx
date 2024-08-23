@@ -31,9 +31,8 @@ const Register = () => {
   }
 
   return (
-      <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-6">
-        <div className="bg-[#ffffff] p-6 rounded-lg shadow-lg w-full max-w-md">
-          <h1 className="text-2xl font-bold text-[#063255] mb-6 text-center">Crear usuario</h1>
+      <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-2">
+        <div className="bg-[#ffffff] p-6 rounded-lg shadow-lg w-full max-w-md flex flex-col space-y-2">
           <form className="flex flex-col space-y-4">
             <input
               required

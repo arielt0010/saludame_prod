@@ -19,16 +19,6 @@ const Users = () => {
             .catch(err => alert(err))
     }, [])
 
-    const handleDelete = (ID) => {
-        axios.delete('http://localhost:8081/deleteUser/' + ID)
-            .then(res => {
-                console.log(res)
-                window.location.reload()
-                navigate("/users")
-            })
-            .catch(err => console.log(err))
-    }
-
     return (
     <div>
         <div className="min-h-screen bg-[#ffffff] p-6 flex flex-col items-center">
@@ -71,12 +61,6 @@ const Users = () => {
                           Editar
                         </button>
                       </Link>
-                      <button
-                        onClick={() => handleDelete(usuario.ID)}
-                        className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors duration-200"
-                      >
-                        Eliminar
-                      </button>
                     </td>
                   </tr>
                 ))}

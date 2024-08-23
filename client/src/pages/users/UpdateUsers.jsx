@@ -45,7 +45,6 @@ const UpdateUsers = () => {
     return (
 <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-semibold mb-6 text-center">Actualizar usuario</h1>
         <form className="space-y-4">
           <div>
             <input
@@ -126,18 +125,18 @@ const UpdateUsers = () => {
               <option value="0">Inactivo</option>
             </select>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-col space-y-2">
             <button
               type="button"
               onClick={handleUpdate}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-200 w-full"
+              className="bg-[#063255] text-white px-6 py-3 rounded-md hover:bg-[#004a6c] transition-colors duration-200 w-full"
             >
               Actualizar
             </button>
             <Link to="/users">
               <button
                 type="button"
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200 w-full"
+                className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] transition-colors duration-200 w-full"
               >
                 Volver atrás
               </button>

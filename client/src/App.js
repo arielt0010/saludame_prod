@@ -21,11 +21,11 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path='/login' element={<Login />} />
-        <Route path='/create-user' element={<Register />} />
         <Route path='/' element={<Layout />}>
           <Route index element={<Home />} />
           <Route path='/start' element={<HomeSistema />} />
           <Route path='/seguro' element={<Seguro />} />
+          <Route path='/create-user' element={<Register />} />
           <Route path='/users' element={<Users />} />
           <Route path='/updateUser/:id' element={<UpdateUsers />} />
           <Route path='/updateRegLibro/:id' element={<UpdateDatosLibroObs />} />

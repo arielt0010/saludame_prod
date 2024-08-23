@@ -11,7 +11,6 @@ const Login = () => {
   })
   const handleChange = e => {
     setValues(prev=>({...prev, [e.target.name]: e.target.value}))
-    console.log(values)
   }
   const navigate = useNavigate();
   const handleSubmit = e => {

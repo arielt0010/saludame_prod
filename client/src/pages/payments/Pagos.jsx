@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import GeneradorPDF from '../../components/GeneradorPDF';
 
 const Pagos = () => {
     axios.defaults.withCredentials = true;
@@ -11,24 +12,18 @@ const Pagos = () => {
         .catch(err => alert(err))
     })
     const navigate = useNavigate();
-
-    const handleDelete = (ID) => {
-        axios.delete('http://localhost:8081/deletePayment/' + ID)
-        .then(res => {
-            console.log(res)
-            navigate("/pagos")
-        })
-        .catch(err => console.log(err))
-    }
-
+    
     const handleCreate = () =>{
         navigate("/createPayment")
+    }
+
+    const handleCreatePDF = () =>{
+      
     }
 
     return (
         <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
         <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
-          <h1 className="text-3xl font-bold text-[#063255] mb-6">Pagos realizados</h1>
           <div className="mb-4 flex justify-end">
             <button
               onClick={handleCreate}
@@ -67,15 +62,13 @@ const Pagos = () => {
                     <td className="px-4 py-2 border">{pagos.formaPago}</td>
                     <td className="px-4 py-2 border">{pagos.usuario}</td>
                     <td className="px-4 py-2 border">{pagos.fechaAgregado}</td>
-                    <td className="px-4 py-2 border flex space-x-2">
-                      <Link to={`/deletePayment/${pagos.Id}`}>
-                        <button
-                          onClick={() => handleDelete(pagos.Id)}
-                          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-800 transition-colors duration-200"
-                        >
-                          Eliminar
-                        </button>
-                      </Link>
+                    <td className="px-4 py-2 border">
+                      <button
+                        onClick={() => handleCreatePDF}
+                        className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                      >
+                        Descargar comprobante
+                      </button>
                     </td>
                   </tr>
                 ))}
