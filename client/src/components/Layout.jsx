@@ -17,6 +17,7 @@ const Layout = () => {
   const routeTitles = {
     '/start': 'Inicio',
     '/seguro': 'Seguro',
+    '/subirPagos': 'Subir comprobante de pago',
     '/users': 'Usuarios',
     '/updateUser/:id': 'Actualizar Usuario',
     '/updateRegLibro/:id': 'Actualizar Libro',

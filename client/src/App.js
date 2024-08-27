@@ -15,6 +15,7 @@ import CreatePago from './pages/payments/CreatePago';
 import CreateDatoLibro from './pages/books/CreateDatoLibro';
 import Layout from './components/Layout';
 import CreateClient from './pages/paymentsClient/CreateClient';
+import UploadPagos from './pages/paymentsClient/UploadPagos';
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path='/start' element={<HomeSistema />} />
           <Route path='/seguro' element={<Seguro />} />
+          <Route path='/subirPagos' element={<UploadPagos />} />
           <Route path='/create-user' element={<Register />} />
           <Route path='/users' element={<Users />} />
           <Route path='/updateUser/:id' element={<UpdateUsers />} />

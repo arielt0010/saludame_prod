@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Seguro = () => {
   axios.defaults.withCredentials = true;
@@ -8,9 +9,10 @@ const Seguro = () => {
   const [apellidoPaterno, setApellidoPaterno] = useState('');
   const [apellidoMaterno, setApellidoMaterno] = useState('');
   const [cliente, setCliente] = useState(null);
-  const [error, setError] = useState(''); 
+  const [error, setError] = useState('');
   const [message, setMessage] = useState(''); // Para manejar el mensaje de deudas pendientes
-  const [pendingPayments, setPendingPayments] = useState([]); // Para manejar los pagos pendientes
+  
+  const navigate = useNavigate();
 
   const handleSearch = async () => {
     try {
@@ -22,13 +24,13 @@ const Seguro = () => {
       setError(foundCliente ? '' : 'No se encontró el cliente');
 
       if (foundCliente) {
-        // Si se encuentra el cliente, verificar el estado de los pagos
-        const paymentResponse = await axios.get(`http://localhost:8081/check-payment-status/${foundCliente.clientId}`);
-        
-        if (paymentResponse.data.message) {
-          setMessage(paymentResponse.data.message); // Mostrar mensaje si no hay deudas pendientes
-        } else {
-          setPendingPayments(paymentResponse.data.pendingPayments); // Mostrar pagos pendientes si existen
+        console.log(foundCliente.cid);
+        const paymentResponse = await axios.get(`http://localhost:8081/check-payment-status/${foundCliente.cid}`);
+        console.log(paymentResponse.status);
+        if (paymentResponse.status === 204) {
+          setMessage(paymentResponse.data.message);
+        } else if (paymentResponse.status === 200) {
+          navigate("/subirPagos")
         }
       }
     } catch (err) {
@@ -38,64 +40,55 @@ const Seguro = () => {
   };
 
   return (
-    <div>
-      <h1>Cancela tu seguro</h1>
-      <h2>Escribe el nombre completo del cliente</h2>
-      <input 
-        type="text" 
-        name="nombre"           
-        placeholder="Nombre"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-      />
-      <input 
-        type="text" 
-        name="apellidoPaterno" 
-        placeholder="Apellido Paterno" 
-        value={apellidoPaterno}
-        onChange={(e) => setApellidoPaterno(e.target.value)}
-      />
-      <input 
-        type="text" 
-        name="apellidoMaterno" 
-        placeholder="Apellido Materno" 
-        value={apellidoMaterno}
-        onChange={(e) => setApellidoMaterno(e.target.value)}
-      />
-      <button type="submit" onClick={handleSearch}>
+    <div className="p-6 max-w-lg mx-auto bg-white shadow-md rounded-lg">
+      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Cancela tu seguro</h1>
+      <h2 className="text-lg mb-4 text-center text-gray-600">Escribe el nombre completo del cliente</h2>
+      <div className="mb-4">
+        <input 
+          type="text" 
+          name="nombre"           
+          placeholder="Nombre"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+      <div className="mb-4">
+        <input 
+          type="text" 
+          name="apellidoPaterno" 
+          placeholder="Apellido Paterno" 
+          value={apellidoPaterno}
+          onChange={(e) => setApellidoPaterno(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+      <div className="mb-4">
+        <input 
+          type="text" 
+          name="apellidoMaterno" 
+          placeholder="Apellido Materno" 
+          value={apellidoMaterno}
+          onChange={(e) => setApellidoMaterno(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+      <button 
+        type="submit" 
+        onClick={handleSearch}
+        className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      >
         Enviar
       </button>
       {cliente ? (
-        <div>         
-          {/* Mostrar mensaje o tabla dependiendo del estado de los pagos */}
-          {message ? (
-            <p>{message}</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Gestión</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingPayments.map((payment, index) => (
-                  <tr key={index}>
-                    <td>{payment.gestion}</td>
-                    <td>
-                      <button onClick={() => handlePayment(payment.gestion)}>Pagar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div className="mt-4">         
+          <p className="text-gray-800">{message}</p>
         </div>
       ) : error ? (
-        <div>
-          <p className="text-red-500">{error}</p>
+        <div className="mt-4 text-red-500">
+          <p className="mb-2">{error}</p>
           <p>¿Es estudiante nuevo? 
-            <Link to="/createClient"> Agregar cliente</Link>
+            <Link to="/createClient" className="text-indigo-600 hover:underline"> Agregar cliente</Link>
           </p>
         </div>
       ) : (
@@ -103,11 +96,6 @@ const Seguro = () => {
       )}
     </div>
   )
-}
-
-const handlePayment = (gestion) => {
-  // Aquí iría la lógica para manejar el pago
-  console.log("Pago gestion:", gestion);
 }
 
 export default Seguro;

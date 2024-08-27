@@ -266,6 +266,26 @@ app.get('/libroOne/:lid', (req,res) => {
     })
 })
 
+app.get('/libroOne/filter', (req,res) => {
+    
+    const { lid, nombre, apellidoPaterno, apellidoMaterno } = req.query;
+
+    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=? and c.nombre = ? and c.apellidoPaterno = ? and c.apellidoMaterno = ? order by d.fechaAtendido desc"
+    db.query(q, [lid, nombre, apellidoPaterno, apellidoMaterno], (err, result) => {
+        if(err) {
+            console.error('Error en la consulta:', err);
+            return res.json({Error: "Error inside server"});
+        }
+        console.log('Resultado de la consulta:', result);
+        if (result.length > 0){
+            return res.json(result);
+        } else {
+            return res.json({Error: "No existen datos"});
+        }
+    });
+});
+
+
 //crear datos libro de observaciones
 app.post('/createRegistro/:lid', (req, res) => {
     const q = "INSERT INTO consulta_medica (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `"
@@ -307,7 +327,7 @@ app.delete('/deleteRegLibro/:id', (req, res) => {
 //query para ver todos
 app.get('/pagos',(req, res) => {
     const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre',"
-    + " col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p"
+    + " col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado, case when p.estado = 1 then 'Aprobado' else 'Por aprobar' end as 'Estado' from pago p"
     + " join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid"; 
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
@@ -379,7 +399,17 @@ app.post('/createPayment', (req, res) => {
       res.status(201).json({ message: 'Pago insertado correctamente', pagoId: result.insertId });
     });
   });
-
+ 
+  //aprobar pago
+  app.put('/aprobarPago/:id', (req, res) =>{
+    const id = req.params.id;
+    const q = 'UPDATE pago SET `estado`= 1 WHERE pid = ?';
+    const values = [id];
+    db.query(q, values, (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        return res.json(result);
+    });
+})
 
   /* CONSULTAS PAGOS SEGURO */
 
@@ -388,33 +418,16 @@ app.get('/check-payment-status/:clientId', (req, res) => {
     const clientId = req.params.clientId;
     const currentYear = new Date().getFullYear();
 
-    // Consulta para verificar si existe un pago para la gestión actual
-    const checkPaymentQuery = "SELECT * FROM pago p join cliente c on p.cidFK1 = c.cid WHERE c.cid = ? AND p.gestion = ?";
+    const checkPaymentQuery = "SELECT p.gestion FROM pago p join cliente c on p.cidFK1 = c.cid WHERE c.cid = ? AND p.gestion = ?";
     
     db.query(checkPaymentQuery, [clientId, currentYear], (err, results) => {
         if (err) {
             return res.status(500).json({ error: "Error en el servidor" });
         }
-
         if (results.length > 0) {
-            // Si existe un pago para la gestión actual, devolver mensaje de que no hay deudas pendientes
-            res.json({ message: "El cliente no tiene deudas pendientes" });
-        } else {
-            // Si no existe un pago para la gestión actual, devolver mensaje de que hay deudas pendientes
-            const pendingPaymentsQuery = "SELECT DISTINCT p.gestion FROM pago p join cliente c on p.cidFK1 = c.cid WHERE c.cid = ? AND p.gestion < ?";
-            db.query(pendingPaymentsQuery, [clientId, currentYear], (err, pendingResults) => {
-                if (err) {
-                    return res.status(500).json({ error: "Error en el servidor" });
-                }
-
-                if (pendingResults.length > 0) {
-                    // Devolver las gestiones pendientes
-                    res.json({ message: "El cliente tiene deudas pendientes", pendingPayments: pendingResults });
-                } else {
-                    // Si no hay pagos anteriores pendientes, indicar que no hay deudas
-                    res.json({ message: "El cliente no tiene deudas pendientes" });
-                }
-            });
+            return res.status(204).json({ message: "El cliente no tiene deudas pendientes" });
+        } else { 
+            return res.status(200).json({ message: "El cliente tiene deudas pendientes" });
         }
     });
 });

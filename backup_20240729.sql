@@ -217,3 +217,25 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2024-07-29 14:20:17
+
+
+insert into colegio (nombre, precio) values ('Colegio Bilingue Santa Cruz', 0);
+insert into colegio (nombre, precio) values ('Colegio Cristo Rey', 0);
+insert into colegio (nombre, precio) values ('Colegio De La Sierra', 130);
+insert into colegio (nombre, precio) values ('Colegio Don Bosco', 80);
+insert into colegio (nombre, precio) values ('Colegio Emprendedor', 0);
+insert into colegio (nombre, precio) values ('Colegio Golden Lion/Kinda', 0);
+insert into colegio (nombre, precio) values ('Colegio Interamericano', 0);
+insert into colegio (nombre, precio) values ('Colegio Jesús Maestro', 120);
+insert into colegio (nombre, precio) values ('Colegio Juan Pablo II', 100);
+insert into colegio (nombre, precio) values ('Colegio Maria Goretti', 0);
+insert into colegio (nombre, precio) values ('Colegio La Salle Tarde', 0);
+insert into colegio (nombre, precio) values ('Colegio Señor Jesus', 200);
+insert into colegio (nombre, precio) values ('Colegio Arakuarenda', 150);
+insert into colegio (nombre, precio) values ('Colegio Santa Ana', 0);
+insert into colegio (nombre, precio) values ('Jardin Materdei', 80);
+insert into colegio (nombre, precio) values ('Jardin Gabrielito', 0);
+insert into colegio (nombre, precio) values ('Jardin Huellitas', 0);
+insert into colegio (nombre, precio) values ('Jardin Pasitos Sur', 100);
+insert into colegio (nombre, precio) values ('Jardin Pasitos Norte', 100);
+insert into colegio (nombre, precio) values ('Frigorífico BFC', 0);

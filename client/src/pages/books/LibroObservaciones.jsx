@@ -5,17 +5,19 @@ import { Link, useNavigate } from 'react-router-dom'
 const DropdownSelection = () => {
     axios.defaults.withCredentials = true;
     const [data, setData] = useState([]);
-    const [nombre, setNombre] = useState('');
+    const [colegio, setColegio] = useState('');
     const [gestion, setGestion] = useState('');
     const [mes, setMes] = useState('');
     const [lid, setLid] = useState(null);   
-    const [details, setDetails] = useState(null);   //detalles del libro de observaciones
+    const [details, setDetails] = useState(null);   
+    const [nombre, setNombre] = useState('');
+    const [apellidoPaterno, setApellidoPaterno] = useState('');
+    const [apellidoMaterno, setApellidoMaterno] = useState('');
 
     useEffect(() => {
         // Obtener los datos del backend
         axios.get('http://localhost:8081/libros')
             .then(response => {
-                console.log(response.data)
                 setData(response.data);
             })
             .catch(error => {
@@ -25,7 +27,7 @@ const DropdownSelection = () => {
 
     const handleSubmit = async () => {
         try{
-            const res = await axios.get(`http://localhost:8081/libros/filter?colegio=${nombre}&gestion=${gestion}&mes=${mes}`);
+            const res = await axios.get(`http://localhost:8081/libros/filter?colegio=${colegio}&gestion=${gestion}&mes=${mes}`);
             const lid = res.data.lid;
             setLid(lid);
             const observacionesResponse = await axios.get(`http://localhost:8081/libros/${lid}`);
@@ -35,7 +37,19 @@ const DropdownSelection = () => {
         }
     }
 
-    const navigate = useNavigate();
+    const handleFilter = async () => {
+        try{
+          const res = await axios.get('http://localhost:8081/libroOne/filter', {
+            params: { lid,nombre, apellidoPaterno, apellidoMaterno }
+          });
+          console.log(res.data);
+          setDetails(res.data);
+        }catch(err){
+            alert(err)
+        }
+    }
+
+    
     
     return (
         <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
@@ -44,8 +58,8 @@ const DropdownSelection = () => {
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <label className="text-[#063255] font-bold">Colegio:</label>
               <select
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                value={colegio}
+                onChange={(e) => setColegio(e.target.value)}
                 className="border border-gray-300 rounded-md p-2"
               >
                 <option value="">Seleccione un colegio</option>
@@ -97,6 +111,48 @@ const DropdownSelection = () => {
                   </button>
                 </Link>
               </div>
+              <label htmlFor="nombre" className="text-[#063255] font-bold">Buscar cliente por:</label>
+              <div className="flex flex-wrap justify-between items-center mb-4 space-y-2">
+              <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <label className="text-[#063255] font-bold">Nombre:</label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-md p-2"
+                />
+              </div>
+
+              {/* Filtro por Apellido Paterno */}
+              <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <label className="text-[#063255] font-bold">Apellido Paterno:</label>
+                <input
+                  type="text"
+                  value={apellidoPaterno}
+                  onChange={(e) => setApellidoPaterno(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-md p-2"
+                />
+              </div>
+
+              {/* Filtro por Apellido Materno */}
+              <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <label className="text-[#063255] font-bold">Apellido Materno:</label>
+                <input
+                  type="text"
+                  value={apellidoMaterno}
+                  onChange={(e) => setApellidoMaterno(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-md p-2"
+                />
+              </div>
+
+              <button
+                onClick={handleFilter}
+                className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200"
+              >
+                Enviar
+              </button>
+            </div>
+
                 <table className="min-w-full border-collapse">
                   <thead>
                     <tr className="bg-[#063255] text-white">

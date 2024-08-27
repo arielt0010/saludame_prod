@@ -6,7 +6,8 @@ const ConversorNumeros = {
     convertir: function(numero, mayusculas) {
       let literal = "";
       let parteDecimal;
-  
+        
+      numero = numero.toString();
       numero = numero.replace(".", ",");
   
       if (!numero.includes(",")) {
@@ -15,7 +16,7 @@ const ConversorNumeros = {
   
       const regex = /^\d{1,9},\d{1,2}$/;
       if (regex.test(numero)) {
-        const [parteEntera, parteDecimal] = numero.split(",");
+        let [parteEntera, parteDecimal] = numero.split(",");
   
         parteDecimal = `${parteDecimal}/100 Bolivianos.`;
   

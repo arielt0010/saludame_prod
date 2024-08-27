@@ -10,15 +10,26 @@ const Pagos = () => {
         axios.get('http://localhost:8081/pagos')
         .then(res => setData(res.data))
         .catch(err => alert(err))
-    })
+    }, [])
     const navigate = useNavigate();
     
     const handleCreate = () =>{
         navigate("/createPayment")
     }
 
-    const handleCreatePDF = () =>{
-      
+    const handleCreatePDF = (pagos) =>{
+      const { Id, Nombre, Curso, Gestion, fechaPago, monto} = pagos;
+      const [year, month, day] = fechaPago.split('T')[0].split('-');
+      GeneradorPDF(Id, Nombre, monto, day, month, year, '0', Curso, Gestion)
+    }
+    const handleApprove = (pagos) => {
+      const { Id } = pagos;
+      axios.put('http://localhost:8081/aprobarPago/' + Id)
+      .then(res => {
+        handleCreatePDF(pagos)
+        window.location.reload()
+      })
+      .catch(err => alert(err))
     }
 
     return (
@@ -46,6 +57,7 @@ const Pagos = () => {
                   <th className="px-4 py-2 border">Forma de pago</th>
                   <th className="px-4 py-2 border">Usuario</th>
                   <th className="px-4 py-2 border">Fecha agregado</th>
+                  <th className="px-4 py-2 border">Estado</th>
                   <th className="px-4 py-2 border">Acción</th>
                 </tr>
               </thead>
@@ -57,18 +69,28 @@ const Pagos = () => {
                     <td className="px-4 py-2 border">{pagos.Colegio}</td>
                     <td className="px-4 py-2 border">{pagos.Curso}</td>
                     <td className="px-4 py-2 border">{pagos.Gestion}</td>
-                    <td className="px-4 py-2 border">{pagos.fechaPago}</td>
+                    <td className="px-4 py-2 border">{new Date(pagos.fechaPago).toLocaleDateString()}</td>
                     <td className="px-4 py-2 border">{pagos.monto}</td>
                     <td className="px-4 py-2 border">{pagos.formaPago}</td>
                     <td className="px-4 py-2 border">{pagos.usuario}</td>
-                    <td className="px-4 py-2 border">{pagos.fechaAgregado}</td>
+                    <td className="px-4 py-2 border">{new Date(pagos.fechaAgregado).toLocaleDateString()}</td>
+                    <td className="px-4 py-2 border">{pagos.Estado}</td>
                     <td className="px-4 py-2 border">
-                      <button
-                        onClick={() => handleCreatePDF}
-                        className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
-                      >
-                        Descargar comprobante
-                      </button>
+                      {pagos.Estado === "Aprobado" ? 
+                        <button
+                          onClick={() => handleCreatePDF(pagos)}
+                          className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                        >
+                          Descargar recibo
+                        </button>
+                      :
+                        <button
+                          onClick={() => handleApprove(pagos)}
+                          className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                        >
+                          Aprobar pago
+                        </button>
+                      }
                     </td>
                   </tr>
                 ))}
