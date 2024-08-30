@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 const DropdownSelection = () => {
     axios.defaults.withCredentials = true;
@@ -39,9 +39,7 @@ const DropdownSelection = () => {
 
     const handleFilter = async () => {
         try{
-          const res = await axios.get('http://localhost:8081/libroOne/filter', {
-            params: { lid,nombre, apellidoPaterno, apellidoMaterno }
-          });
+          const res = await axios.get(`http://localhost:8081/libroOne/filter?lid=${lid}&nombre=${nombre}&apellidoPaterno=${apellidoPaterno}&apellidoMaterno=${apellidoMaterno}`);
           console.log(res.data);
           setDetails(res.data);
         }catch(err){
@@ -49,8 +47,6 @@ const DropdownSelection = () => {
         }
     }
 
-    
-    
     return (
         <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
         <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">

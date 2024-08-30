@@ -18,6 +18,8 @@ const Layout = () => {
     '/start': 'Inicio',
     '/seguro': 'Seguro',
     '/subirPagos': 'Subir comprobante de pago',
+    '/datosTutor': 'Datos del Tutor',
+    '/hecho': 'Hecho',
     '/users': 'Usuarios',
     '/updateUser/:id': 'Actualizar Usuario',
     '/updateRegLibro/:id': 'Actualizar Libro',

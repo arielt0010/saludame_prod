@@ -16,6 +16,8 @@ import CreateDatoLibro from './pages/books/CreateDatoLibro';
 import Layout from './components/Layout';
 import CreateClient from './pages/paymentsClient/CreateClient';
 import UploadPagos from './pages/paymentsClient/UploadPagos';
+import UpdateDatosTutor from './pages/paymentsClient/UpdateDatosTutor';
+import Done from './pages/paymentsClient/Done';
 
 const App = () => {
   return (
@@ -36,6 +38,8 @@ const App = () => {
           <Route path='/createPayment' element={<CreatePago />} />
           <Route path='/createClient' element={<CreateClient />} />
           <Route path='/createRegistro/:lid' element={<CreateDatoLibro />} />
+          <Route path='/datosTutor/' element={<UpdateDatosTutor />} />
+          <Route path='/hecho' element={<Done />} />
         </Route>
       </Routes>
     </BrowserRouter>

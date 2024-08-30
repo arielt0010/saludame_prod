@@ -4,6 +4,8 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
+import multer from 'multer';
+import path from 'path';
 
 const salt = 10; 
 const MAX_INTENTOS = 3;
@@ -19,6 +21,16 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/'); // Carpeta donde se guardarán las imágenes
+    },
+    filename: (req, file, cb) => {
+      cb(null, `${Date.now()}-${file.originalname}`);
+    }
+  });
+
+const upload = multer({ storage: storage });
 
 const db = mysql.createConnection({
     host: "localhost",
@@ -244,7 +256,7 @@ app.get('/libros/filter' ,(req,res) => {
 
 //query para ver todos
 app.get('/libros/:lid', (req,res) => {
-    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=?";
+    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=? order by d.fechaAtendido desc";
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
@@ -328,7 +340,7 @@ app.delete('/deleteRegLibro/:id', (req, res) => {
 app.get('/pagos',(req, res) => {
     const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre',"
     + " col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado, case when p.estado = 1 then 'Aprobado' else 'Por aprobar' end as 'Estado' from pago p"
-    + " join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid"; 
+    + " join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid order by fechaAgregado desc"; 
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         else if (result.length > 0) {
@@ -432,6 +444,72 @@ app.get('/check-payment-status/:clientId', (req, res) => {
     });
 });
 
+//select colegio para mostrar imagen de comprobante
+app.get('/getColegio/:cid', (req, res) => {
+  const q = "select col.nombre, col.precio from colegio col join cliente c on col.cid = c.colegio where c.cid=? and precio > 0";
+  const cid = req.params.cid;
+  db.query(q, [cid], (err, result) => {
+      if(err) return res.status(500).json({Error: "Error inside server"});
+      else if (result.length > 0){return res.status(200).json(result);}
+      else return (res.status(404).json({Error: "No existen datos" }))
+  });
+});
+
+//insertar pago desde cliente
+app.post('/createClientPayment', (req, res) => {
+    const gestion = req.body.gestion;
+    const fecha = new Date();
+    const monto = req.body.monto;
+    const cid = req.body.cid;
+    const uid = req.body.uid;
+
+    const query = `
+      INSERT INTO pago (gestion, fechaPago, formaPago, monto, fechaAgregado, cidFK1, uidFK2, estado)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(query, [gestion, fecha, 2, monto, fecha, cid, uid, 0], (err, result) => {
+      if (err) {
+        console.error('Error al insertar el pago:', err);
+        res.status(500).json({ error: 'Error en la base de datos' });
+        return;
+      }
+      res.status(201).json({ message: 'Pago insertado correctamente', pagoId: result.insertId });
+    });
+  });
+
+//subir imagen de comprobante
+app.post('/upload', upload.single('image'), async (req, res) => {
+    try {
+      const { cid } = req.body;
+      const imagePath = req.file.path;
+  
+      const sql = 'UPDATE pago set comprobantePago = ? where cidFK1 = ?';
+      db.query(sql, [imagePath, cid], (err, result) => {
+        if (err) {
+          console.error('Error al actualizar el comprobante:', err);
+          res.status(500).json({ error: 'Error en la base de datos' });
+        }else{
+          res.status(200).json({ message: 'Imagen subida correctamente', imagePath });
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Error subiendo la imagen' });
+    }
+  });
+
+app.post('/uploadDatosTutor',  (req, res) => {
+    const { nombre, telefono, cid } = req.body;
+    const sql = 'UPDATE cliente set nombreTutor = ?, nroTelefonoTutor = ? where cid = ?';
+    db.query(sql, [nombre, telefono, cid], (err, result) => {
+        if (err) {
+            console.error('Error al actualizar el dato:', err);
+            res.status(500).json({ error: 'Error en la base de datos' });
+        }else{
+            res.status(200).json({ message: 'Datos actualizados correctamente', datosActualizados: res.affectedRows });
+        }
+    })
+});
 
 /* OTRAS CONSULTAS */
 

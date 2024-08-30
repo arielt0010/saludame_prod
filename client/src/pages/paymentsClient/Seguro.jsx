@@ -24,13 +24,12 @@ const Seguro = () => {
       setError(foundCliente ? '' : 'No se encontró el cliente');
 
       if (foundCliente) {
-        console.log(foundCliente.cid);
         const paymentResponse = await axios.get(`http://localhost:8081/check-payment-status/${foundCliente.cid}`);
         console.log(paymentResponse.status);
         if (paymentResponse.status === 204) {
           setMessage(paymentResponse.data.message);
         } else if (paymentResponse.status === 200) {
-          navigate("/subirPagos")
+          navigate("/subirPagos", {state: {cid  : foundCliente.cid}})
         }
       }
     } catch (err) {
@@ -82,7 +81,7 @@ const Seguro = () => {
       </button>
       {cliente ? (
         <div className="mt-4">         
-          <p className="text-gray-800">{message}</p>
+          <p className="mb-2 text-gray-800">{message}</p>
         </div>
       ) : error ? (
         <div className="mt-4 text-red-500">

@@ -14,7 +14,7 @@ const AddClientForm = () => {
         fechaNacimiento: '',
         colegio: '',
         curso: '',
-        uidFK1: ''  
+        uidFK1: 26  
     });
     const [colegios, setColegios] = useState([]);
     const navigate = useNavigate();
