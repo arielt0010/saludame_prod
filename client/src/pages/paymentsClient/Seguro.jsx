@@ -41,7 +41,7 @@ const Seguro = () => {
   return (
     <div className="p-6 max-w-lg mx-auto bg-white shadow-md rounded-lg">
       <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Cancela tu seguro</h1>
-      <h2 className="text-lg mb-4 text-center text-gray-600">Escribe el nombre completo del cliente</h2>
+      <h2 className="text-lg mb-4 text-center text-gray-600">Escribe el nombre completo del asegurado</h2>
       <div className="mb-4">
         <input 
           type="text" 
@@ -49,7 +49,7 @@ const Seguro = () => {
           placeholder="Nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
       <div className="mb-4">
@@ -59,7 +59,7 @@ const Seguro = () => {
           placeholder="Apellido Paterno" 
           value={apellidoPaterno}
           onChange={(e) => setApellidoPaterno(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
       <div className="mb-4">
@@ -69,13 +69,13 @@ const Seguro = () => {
           placeholder="Apellido Materno" 
           value={apellidoMaterno}
           onChange={(e) => setApellidoMaterno(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
       <button 
         type="submit" 
         onClick={handleSearch}
-        className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full px-4 py-2 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
       >
         Enviar
       </button>

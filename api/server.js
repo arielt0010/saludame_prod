@@ -42,7 +42,7 @@ const db = mysql.createConnection({
 const verifyUser = (req, res, next) => {
     const token = req.cookies.token;
     if(!token){
-        return res.json({Error: "No estás autenticado"});
+        return res.status(403).json({Error: "No estás autenticado"});
     }else{
         jwt.verify(token, "jwt-secret-key", (err, decode) => {
             if(err){
@@ -278,24 +278,23 @@ app.get('/libroOne/:lid', (req,res) => {
     })
 })
 
-app.get('/libroOne/filter', (req,res) => {
-    
+app.get('/anotherLibro/filter', (req, res) => {
     const { lid, nombre, apellidoPaterno, apellidoMaterno } = req.query;
 
-    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=? and c.nombre = ? and c.apellidoPaterno = ? and c.apellidoMaterno = ? order by d.fechaAtendido desc"
+    const q = "SELECT d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' FROM consulta_medica d JOIN cliente c ON d.cidFK2 = c.cid JOIN usuario u ON d.uidFK3 = u.uid JOIN libro_consulta l ON d.lidFK1 = l.lid WHERE lid=? AND c.nombre = ? AND c.apellidoPaterno = ? AND c.apellidoMaterno = ? ORDER BY d.fechaAtendido DESC";
     db.query(q, [lid, nombre, apellidoPaterno, apellidoMaterno], (err, result) => {
-        if(err) {
+        if (err) {
             console.error('Error en la consulta:', err);
-            return res.json({Error: "Error inside server"});
+            return res.json({ Error: "Error en el servidor" });
         }
-        console.log('Resultado de la consulta:', result);
-        if (result.length > 0){
+        if (result.length > 0) {
             return res.json(result);
         } else {
-            return res.json({Error: "No existen datos"});
+            return res.json({ Error: "No existen datos" });
         }
     });
 });
+
 
 
 //crear datos libro de observaciones

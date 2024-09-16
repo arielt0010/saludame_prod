@@ -14,7 +14,7 @@ const Secretaria = () => {
         <button 
         className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200 w-full"
         onClick={handleSubmitLibros}>
-        Administrar libro de observaciones
+        Administrar libro de consultas médicas
         </button>
         <button 
         className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200 w-full"

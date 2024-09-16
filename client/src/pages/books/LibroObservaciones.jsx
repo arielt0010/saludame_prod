@@ -39,7 +39,11 @@ const DropdownSelection = () => {
 
     const handleFilter = async () => {
         try{
-          const res = await axios.get(`http://localhost:8081/libroOne/filter?lid=${lid}&nombre=${nombre}&apellidoPaterno=${apellidoPaterno}&apellidoMaterno=${apellidoMaterno}`);
+          const res = await axios.get(`http://localhost:8081/anotherLibro/filter?lid=${lid}&nombre=${nombre}&apellidoPaterno=${apellidoPaterno}&apellidoMaterno=${apellidoMaterno}`);
+          console.log("Lid " + lid)
+          console.log("Nombre " + nombre)
+          console.log("ApellidoPaterno " + apellidoPaterno)
+          console.log("ApellidoMaterno " + apellidoMaterno)
           console.log(res.data);
           setDetails(res.data);
         }catch(err){
@@ -107,7 +111,7 @@ const DropdownSelection = () => {
                   </button>
                 </Link>
               </div>
-              <label htmlFor="nombre" className="text-[#063255] font-bold">Buscar cliente por:</label>
+              <label htmlFor="nombre" className="text-[#063255] font-bold">Buscar asegurado por:</label>
               <div className="flex flex-wrap justify-between items-center mb-4 space-y-2">
               <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 <label className="text-[#063255] font-bold">Nombre:</label>

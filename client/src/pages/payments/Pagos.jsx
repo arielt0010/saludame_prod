@@ -21,6 +21,7 @@ const Pagos = () => {
       const { Id, Nombre, Curso, Gestion, fechaPago, monto} = pagos;
       const [year, month, day] = fechaPago.split('T')[0].split('-');
       GeneradorPDF(Id, Nombre, monto, day, month, year, '0', Curso, Gestion)
+      
     }
     const handleApprove = (pagos) => {
       const { Id } = pagos;

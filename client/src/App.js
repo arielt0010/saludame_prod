@@ -18,10 +18,12 @@ import CreateClient from './pages/paymentsClient/CreateClient';
 import UploadPagos from './pages/paymentsClient/UploadPagos';
 import UpdateDatosTutor from './pages/paymentsClient/UpdateDatosTutor';
 import Done from './pages/paymentsClient/Done';
+import OfflineNotification from './components/Offline';
 
 const App = () => {
   return (
     <BrowserRouter>
+      <OfflineNotification />
       <Routes>
         <Route path='/login' element={<Login />} />
         <Route path='/' element={<Layout />}>

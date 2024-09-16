@@ -27,7 +27,7 @@ const Layout = () => {
     '/pagos': 'Pagos realizados',
     '/createPayment': 'Agregar Pago',
     '/createRegistro/:lid': 'Agregar Registro',
-    '/createClient': 'Agregar Cliente',
+    '/createClient': 'Agregar Asegurado',
     '/create-user': 'Crear Usuario',
     '/login': 'Iniciar Sesión',
   };
