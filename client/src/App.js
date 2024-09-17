@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 import Login from './pages/users/Login';
 import Register from './pages/users/Register';
+import ChangePassword from './pages/users/ChangePassword';
+import PasswordResetRequest from './pages/users/PasswordRequest';
 import Home from './pages/Home';
 import HomeSistema from './pages/HomeSistema';
 import Seguro from './pages/paymentsClient/Seguro';
@@ -26,6 +28,8 @@ const App = () => {
       <OfflineNotification />
       <Routes>
         <Route path='/login' element={<Login />} />
+        <Route path='/change-password' element={<ChangePassword />} />
+        <Route path='/reset-password' element={<PasswordResetRequest />} />
         <Route path='/' element={<Layout />}>
           <Route index element={<Home />} />
           <Route path='/start' element={<HomeSistema />} />

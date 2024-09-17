@@ -25,7 +25,7 @@ const Home = () => {
         </Link>
         <Link to="/seguro">
           <button className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] transition-colors duration-200 w-full">
-            Cancelar seguro
+            Pagar seguro
           </button>
         </Link>
       </div>

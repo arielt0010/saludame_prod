@@ -77,6 +77,7 @@ const ClienteYPago = () => {
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           className="mb-2 sm:mb-0 p-2 border rounded-md w-full sm:w-1/3"
+          required
         />
         <input
           type="text"
@@ -84,6 +85,7 @@ const ClienteYPago = () => {
           value={apellidoPaterno}
           onChange={(e) => setApellidoPaterno(e.target.value)}
           className="mb-2 sm:mb-0 p-2 border rounded-md w-full sm:w-1/3"
+          required
         />
         <input
           type="text"
@@ -91,6 +93,7 @@ const ClienteYPago = () => {
           value={apellidoMaterno}
           onChange={(e) => setApellidoMaterno(e.target.value)}
           className="mb-2 sm:mb-0 p-2 border rounded-md w-full sm:w-1/3"
+          required
         />
         <button
           onClick={handleSearch}
@@ -112,6 +115,7 @@ const ClienteYPago = () => {
               value={gestion}
               onChange={(e) => setGestion(e.target.value)}
               className="mb-2 sm:mb-0 p-2 border rounded-md w-full sm:w-1/4"
+              required
             />
             <input
               type="date"
@@ -119,11 +123,13 @@ const ClienteYPago = () => {
               value={fechaPago}
               onChange={(e) => setFechaPago(e.target.value)}
               className="mb-2 sm:mb-0 p-2 border rounded-md w-full sm:w-1/4"
+              required
             />
             <select
               name="formaPago"
               onChange={(e) => setFormaPago(e.target.value)}
               className="mb-2 sm:mb-0 p-2 border rounded-md w-full sm:w-1/4"
+              required
             >
               <option value="1">Efectivo</option>
               <option value="2">Transferencia</option>
@@ -135,6 +141,7 @@ const ClienteYPago = () => {
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
               className="mb-2 sm:mb-0 p-2 border rounded-md w-full sm:w-1/4"
+              required
             />
             <button
               onClick={handleAgregarPago}

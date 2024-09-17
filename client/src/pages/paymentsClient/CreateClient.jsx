@@ -111,11 +111,12 @@ const AddClientForm = () => {
                     value={formData.apellidoMaterno}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    required
                 />
             </div>
 
             <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">CI:</label>
+                <label className="block text-sm font-medium text-gray-700">Cédula de identidad:</label>
                 <input
                     type="text"
                     name="ci"
@@ -145,6 +146,7 @@ const AddClientForm = () => {
                     value={formData.colegio}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    required
                 >
                     {colegios.map(colegio => (
                         <option key={colegio.cid} value={colegio.cid}>
@@ -162,6 +164,7 @@ const AddClientForm = () => {
                     value={formData.curso}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    required
                 />
             </div>
 

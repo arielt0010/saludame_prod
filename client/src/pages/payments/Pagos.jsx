@@ -1,54 +1,74 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GeneradorPDF from '../../components/GeneradorPDF';
 
 const Pagos = () => {
-    axios.defaults.withCredentials = true;
-    const [data, setData] = useState([])
-    useEffect(() => {
-        axios.get('http://localhost:8081/pagos')
-        .then(res => setData(res.data))
-        .catch(err => alert(err))
-    }, [])
-    const navigate = useNavigate();
-    
-    const handleCreate = () =>{
-        navigate("/createPayment")
-    }
+  axios.defaults.withCredentials = true;
+  const [data, setData] = useState([]);
+  const [page, setPage] = useState(1);  // Página actual
+  const [totalPages, setTotalPages] = useState(1); // Total de páginas
 
-    const handleCreatePDF = (pagos) =>{
-      const { Id, Nombre, Curso, Gestion, fechaPago, monto} = pagos;
-      const [year, month, day] = fechaPago.split('T')[0].split('-');
-      GeneradorPDF(Id, Nombre, monto, day, month, year, '0', Curso, Gestion)
-      
-    }
-    const handleApprove = (pagos) => {
-      const { Id } = pagos;
-      axios.put('http://localhost:8081/aprobarPago/' + Id)
+  const fetchData = (currentPage) => {
+    axios.get(`http://localhost:8081/pagos?page=${currentPage}&limit=15`)
       .then(res => {
-        handleCreatePDF(pagos)
-        window.location.reload()
+        setData(res.data.items); // Suponiendo que 'items' es el array de pagos
+        setTotalPages(res.data.totalPages); // Total de páginas
       })
-      .catch(err => alert(err))
-    }
+      .catch(err => alert(err));
+  };
 
-    return (
-        <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
-        <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
-          <div className="mb-4 flex justify-end">
-            <button
-              onClick={handleCreate}
-              className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
-            >
-              Crear pago
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="bg-[#063255] text-white">
-                  <th className="px-4 py-2 border">Id</th>
+  useEffect(() => {
+    fetchData(page);
+  }, [page]);
+
+  const navigate = useNavigate();
+
+  const handleCreate = () => {
+    navigate("/createPayment");
+  };
+
+  const handleCreatePDF = (pagos) => {
+    const { Id, Nombre, Curso, Gestion, fechaPago, monto } = pagos;
+    const [year, month, day] = fechaPago.split('T')[0].split('-');
+    GeneradorPDF(Id, Nombre, monto, day, month, year, '0', Curso, Gestion);
+  };
+
+  const handleApprove = (pagos) => {
+    const { Id } = pagos;
+    axios.put('http://localhost:8081/aprobarPago/' + Id)
+      .then(res => {
+        handleCreatePDF(pagos);
+        window.location.reload();
+      })
+      .catch(err => alert(err));
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(page + 1);
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
+      <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={handleCreate}
+            className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+          >
+            Crear pago
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead>
+              <tr className="bg-[#063255] text-white">
+                {/* Cabezera de la tabla */}
+                <th className="px-4 py-2 border">Id</th>
                   <th className="px-4 py-2 border">Nombre</th>
                   <th className="px-4 py-2 border">Colegio</th>
                   <th className="px-4 py-2 border">Curso</th>
@@ -60,11 +80,11 @@ const Pagos = () => {
                   <th className="px-4 py-2 border">Fecha agregado</th>
                   <th className="px-4 py-2 border">Estado</th>
                   <th className="px-4 py-2 border">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((pagos, index) => (
-                  <tr key={index} className="even:bg-gray-100">
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((pagos, index) => (
+                <tr key={index} className="even:bg-gray-100">
                     <td className="px-4 py-2 border">{pagos.Id}</td>
                     <td className="px-4 py-2 border">{pagos.Nombre}</td>
                     <td className="px-4 py-2 border">{pagos.Colegio}</td>
@@ -93,14 +113,32 @@ const Pagos = () => {
                         </button>
                       }
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Paginación */}
+        <div className="mt-4 flex justify-between">
+          <button 
+            onClick={handlePreviousPage} 
+            disabled={page === 1} 
+            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md"
+          >
+            Anterior
+          </button>
+          <span>Página {page} de {totalPages}</span>
+          <button 
+            onClick={handleNextPage} 
+            disabled={page === totalPages} 
+            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md"
+          >
+            Siguiente
+          </button>
         </div>
       </div>
-  )
-}
+    </div>
+  );
+};
 
-export default Pagos
+export default Pagos;

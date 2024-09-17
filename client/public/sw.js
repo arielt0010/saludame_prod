@@ -3,7 +3,7 @@ const CACHE_NAME = 'my-app-cache-v1';
 const urlsToCache = [
   '/',
   '/users',
-  '/static/js/bundle.js',
+  '/pagos',
   // Añade otros recursos que quieras cachear
 ];
 

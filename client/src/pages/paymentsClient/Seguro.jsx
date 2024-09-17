@@ -40,7 +40,7 @@ const Seguro = () => {
 
   return (
     <div className="p-6 max-w-lg mx-auto bg-white shadow-md rounded-lg">
-      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Cancela tu seguro</h1>
+      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Paga tu seguro</h1>
       <h2 className="text-lg mb-4 text-center text-gray-600">Escribe el nombre completo del asegurado</h2>
       <div className="mb-4">
         <input 

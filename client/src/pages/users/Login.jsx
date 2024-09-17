@@ -16,15 +16,20 @@ const Login = () => {
   const handleSubmit = e => {
     e.preventDefault();
     axios.post('http://localhost:8081/login', values)
-    .then(res => {
-      if(res.data.Status === "Success"){
-        navigate("/start")
-      }else{
-        alert(res.data.Error)
-      }
-    })
-    .then(err => console.log(err))
-  }
+      .then(res => {
+        if (res.data.Status === "Success") {
+          navigate("/start");  // Redirige al dashboard si el login es exitoso
+        } else if (res.data.Status === "PasswordChangeRequired") {
+          navigate("/change-password");  // Redirige a la página de cambio de contraseña
+        } else {
+          alert(res.data.Error);
+        }
+      })
+      .catch(err => console.log(err));
+  };
+  const handlePasswordReset = () => {
+    navigate("/reset-password");
+  };
   return (
     <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-6">
       <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-6" /> 
@@ -56,6 +61,16 @@ const Login = () => {
           >
             Iniciar sesión
           </button>
+
+          <button
+            type="button"
+            onClick={handlePasswordReset}
+            className="bg-[#f56565] text-white px-6 py-3 rounded-md hover:bg-[#c53030] 
+            transition-colors duration-200 w-full"
+          >
+            Restablecer contraseña
+          </button>
+
           <Link to="/">
             <button className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] 
             transition-colors duration-200 w-full">

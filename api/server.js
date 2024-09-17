@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
 import multer from 'multer';
-import path from 'path';
 
 const salt = 10; 
 const MAX_INTENTOS = 3;
@@ -106,6 +105,13 @@ app.post('/login', (req, res) => {
                 if (err) return res.json({ Error: "Error en el servidor" });
 
                 if (response) {
+                    // Verificar si necesita cambiar la contraseña
+                    if (usuario.necesitaContraseña) {
+                        const token = jwt.sign({ uid: usuario.uid }, "jwt-secret-key", { expiresIn: '1h' });
+                        res.cookie('token', token);  // Guarda el token en una cookie
+                        return res.json({ Status: "PasswordChangeRequired" });  // Enviar respuesta indicando que debe cambiar la contraseña
+                    }
+
                     // Resetear intentos fallidos si el inicio de sesión es exitoso
                     const resetIntentos = "UPDATE usuario SET intentosFallidos = 0, tiempoBloqueo = NULL WHERE uid = ?";
                     db.query(resetIntentos, [usuario.uid], (err) => {
@@ -144,6 +150,46 @@ app.post('/login', (req, res) => {
     });
 });
 
+//que el usuario cambie su contraseña
+app.post('/change-password', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) return res.json({ Error: "No autenticado" });
+
+    // Verificar el token JWT
+    jwt.verify(token, "jwt-secret-key", (err, decoded) => {
+        if (err) return res.json({ Error: "Token inválido" });
+
+        const { newPassword } = req.body;
+
+        if (!newPassword) {
+            return res.json({ Error: "La nueva contraseña es requerida" });
+        }
+
+        const hashedPassword = bcrypt.hashSync(newPassword, salt);  // Hashear la nueva contraseña
+
+        const updatePassword = "UPDATE usuario SET contraseña = ?, necesitaContraseña = 0 WHERE uid = ?";
+        db.query(updatePassword, [hashedPassword, decoded.uid], (err) => {
+            if (err) return res.json({ Error: "Error al actualizar la contraseña" });
+
+            // Eliminar el token para evitar que se reutilice
+            res.clearCookie('token');
+            return res.json({ Status: "PasswordChanged" });
+        });
+    });
+});
+
+//que el usuario solicite restablecer su contraseña
+app.put('/reset-password/', (req, res) => {
+    const { user } = req.body;
+    const q = "UPDATE usuario SET solicitudRestablecimiento = 1 WHERE usuario = ? and estado = 1";
+    
+    db.query(q, [user], (err, data) => {
+      if (err) return res.json({ Error: "Error en el servidor" });
+      return res.json({ Status: "Solicitud enviada" });
+    });
+  });
+
+//pagina inicial
 app.get('/start', verifyUser, (req, res) => {
     return res.json({Status: "Success", name:req.name});
 })
@@ -213,7 +259,7 @@ app.put('/update/:id', verifyUser,checkRole(1), (req, res) =>{
         // Si hay una contraseña, hashearla y actualizar todos los campos
         bcrypt.hash(password, salt, (err, hash) => {
             if (err) return res.json({ Error: "Error from hashing password" });
-            const q2 = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `contraseña` = ?, `ridFK` = ? , `estado` = ?, `apellidoPaterno` = ?, `apellidoMaterno` = ? WHERE uid = ?';
+            const q2 = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `contraseña` = ?, `ridFK` = ? , `estado` = ?, `apellidoPaterno` = ?, `apellidoMaterno` = ? , `solicitudRestablecimiento` = 0 WHERE uid = ?';
             const values = [name, user, hash, ridFK, estado, apellidoPaterno, apellidoMaterno, id];
             db.query(q2, values, (err, result) => {
                 if (err) return res.json({ Error: "Inserting data error in server" });
@@ -270,7 +316,6 @@ app.get('/libros/:lid', (req,res) => {
 app.get('/libroOne/:lid', (req,res) => {
     const q = 'select fechaAtendido, diagnostico, tratamiento, observaciones from consulta_medica where did = ?';
     const {lid} = req.params.lid;
-    console.log(lid)
 
     db.query(q, [lid], (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
@@ -295,7 +340,31 @@ app.get('/anotherLibro/filter', (req, res) => {
     });
 });
 
+app.get('/getColegioIdLibro/:lid', (req, res) => {
+  const q = "select * from libro_consulta where lid = ?";
+  const lid = req.params.lid;
+  db.query(q, [lid], (err, result) => {
+      if(err) return res.status(500).json({Error: "Error inside server"});
+      else if (result.length > 0){return res.status(200).json(result);}
+      else return (res.status(404).json({Error: "No existen datos" }))
+  });
+});
 
+app.get('/searchClienteLibro',(req, res) => {
+    const {nombre, apellidoPaterno, apellidoMaterno, colegio} = req.query;
+    const q = "select cid, nombre, apellidoPaterno, apellidoMaterno" +
+    " from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ? and colegio=?;";
+    db.query(q, [nombre, apellidoPaterno, apellidoMaterno, colegio], (err, result) => {
+        if(err) return res.json({Error: "Error inside server"});
+        else if (result.length > 0) {
+            console.log(res.json(result));
+            return res.json(result);
+            
+        }else{
+            res.status(404).json({Error: 'No existen clientes' });
+        }
+    })
+})
 
 //crear datos libro de observaciones
 app.post('/createRegistro/:lid', (req, res) => {
@@ -336,19 +405,56 @@ app.delete('/deleteRegLibro/:id', (req, res) => {
 /* CONSULTA DE PAGOS */
 
 //query para ver todos
-app.get('/pagos',(req, res) => {
-    const q = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre',"
-    + " col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado, case when p.estado = 1 then 'Aprobado' else 'Por aprobar' end as 'Estado' from pago p"
-    + " join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid order by fechaAgregado desc"; 
-    db.query(q, (err, result) => {
-        if(err) return res.json({Error: "Error inside server"});
+app.get('/pagos', (req, res) => {
+    const limit = parseInt(req.query.limit) || 15;  // Tamaño de página
+    const page = parseInt(req.query.page) || 1;  // Página actual
+    const offset = (page - 1) * limit;  // Desplazamiento
+
+    const q = `SELECT p.pid AS 'Id', 
+                      CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) AS 'Nombre',
+                      col.nombre AS Colegio, 
+                      c.curso AS Curso, 
+                      p.gestion AS Gestion,  
+                      p.fechaPago, 
+                      p.monto, 
+                      f.nombrePago AS 'formaPago', 
+                      u.usuario, 
+                      p.fechaAgregado, 
+                      CASE 
+                          WHEN p.estado = 1 THEN 'Aprobado' 
+                          ELSE 'Por aprobar' 
+                      END AS 'Estado' 
+               FROM pago p
+               JOIN cliente c ON p.cidFK1 = c.cid 
+               JOIN usuario u ON p.uidFK2 = u.uid 
+               JOIN colegio col ON c.colegio = col.cid 
+               JOIN forma_pago f ON p.formaPago = f.fid 
+               ORDER BY fechaAgregado DESC 
+               LIMIT ? OFFSET ?`;
+
+    db.query(q, [limit, offset], (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
         else if (result.length > 0) {
-            return res.status(200).json(result);
-        }else{
-            res.status(404).json({Error: 'No existen pagos' });
+            // Obtener el número total de registros para calcular el total de páginas
+            const countQuery = `SELECT COUNT(*) AS total FROM pago`;
+            db.query(countQuery, (err, countResult) => {
+                if (err) return res.json({ Error: "Error fetching total count" });
+
+                const totalItems = countResult[0].total;
+                const totalPages = Math.ceil(totalItems / limit);
+
+                return res.status(200).json({
+                    items: result,       // Datos de la página actual
+                    totalPages: totalPages,  // Total de páginas
+                    currentPage: page    // Página actual
+                });
+            });
+        } else {
+            res.status(404).json({ Error: 'No existen pagos' });
         }
-    })
-})
+    });
+});
+
 
 //filtrar
 app.get('/pagos/filter' ,(req,res) => {
@@ -376,7 +482,7 @@ app.delete('/deletePayment/:id', (req, res) => {
     });
 })
 
-//buscar al cliente para registrar pago y registrar datos libro de observaciones
+//buscar al cliente para registrar pago 
 app.get('/searchCliente',(req, res) => {
     const {nombre, apellidoPaterno, apellidoMaterno} = req.query;
     const q = "select cid, nombre, apellidoPaterno, apellidoMaterno" +

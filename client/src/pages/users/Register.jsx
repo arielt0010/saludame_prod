@@ -11,7 +11,7 @@ const Register = () => {
     user: "",
     password: "",
     ridFK:"",
-    estado: ""
+    estado: "Activo"
   })
   const handleChange = e => {
     setValues(prev=>({...prev, [e.target.name]: e.target.value}))

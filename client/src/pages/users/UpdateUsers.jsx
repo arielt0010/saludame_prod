@@ -11,7 +11,13 @@ const UpdateUsers = () => {
     useEffect(() => {
         axios.get('http://localhost:8081/users/' + id)
         .then(res => {
-           setValues({...values, name: res.data[0].nombre, user: res.data[0].usuario, ridFK : res.data[0].ridFK, estado: res.data[0].estado, apellidoPaterno: res.data[0].apellidoPaterno, apellidoMaterno: res.data[0].apellidoMaterno})
+           setValues({...values, name: res.data[0].nombre, 
+                    user: res.data[0].usuario, 
+                    ridFK : res.data[0].ridFK, 
+                    estado: res.data[0].estado, 
+                    apellidoPaterno: res.data[0].apellidoPaterno, 
+                    apellidoMaterno: res.data[0].apellidoMaterno, 
+                    solicitudRestablecimiento: res.data[0].solicitudRestablecimiento})
         }).catch(err =>console.log(err))
     }, [id])
 
@@ -90,15 +96,18 @@ const UpdateUsers = () => {
               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div>
-            <input
-              type="password"
-              placeholder="Contraseña nueva? Dejar en blanco si no"
-              name="password"
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {values.solicitudRestablecimiento && (
+            <div>
+              <input
+                type="password"
+                placeholder="Nueva contraseña"
+                name="password"
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
           <div>
             <select
               name="ridFK"

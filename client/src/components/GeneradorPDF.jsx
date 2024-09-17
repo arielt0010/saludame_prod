@@ -63,7 +63,7 @@ const DocumentoPDF = async (nro, name, cash, day, month, year, codigo_alumno, cu
 
   const margin = 10; // Margen adicional para el espacio
   const content = [
-    { text: `Fecha: ${day} de ${month} del ${year}`, x: 50, y: page.getHeight() - logoHeight - 180 - margin, color: blue },
+    { text: `Fecha: ${day}/${month}/${year}`, x: 50, y: page.getHeight() - logoHeight - 180 - margin, color: blue },
     { text: `He recibido del Alumno(a): ${name.toUpperCase()}`, x: 50, y: page.getHeight() - logoHeight - 210 - margin, color: blue },
     { text: `La suma de: ${ConversorNumeros.convertir(cash)}`, x: 50, y: page.getHeight() - logoHeight - 240 - margin, color: blue },
     { text: `Por concepto de: ASISTENCIA MEDICA DE EMERGENCIA`, x: 50, y: page.getHeight() - logoHeight - 270 - margin, color: blue },

@@ -10,6 +10,7 @@ import { jwtDecode } from 'jwt-decode';
 const CreateDatoLibro = () => {
     axios.defaults.withCredentials = true;
     const {lid} = useParams();
+    const [colegioId, setColegioId] = useState('');
     const [nombre, setNombre] = useState('');
     const [apellidoPaterno, setApellidoPaterno] = useState('');
     const [apellidoMaterno, setApellidoMaterno] = useState('');
@@ -34,7 +35,19 @@ const CreateDatoLibro = () => {
           }
         }
       }, []);
-    
+
+    useEffect(() => {
+        axios.get('http://localhost:8081/getColegioIdLibro/'+ lid)
+            .then(res => {
+                if (Array.isArray(res.data)) {
+                    setColegioId(res.data[0].colegioFK2);
+                } else {
+                    alert("Error al cargar los datos");
+                }
+            })
+            .catch(err => alert(err))
+    }, [colegioId]);
+
     const handleSearch = async () => {
       try {
         const response = await axios.get('http://localhost:8081/searchCliente', {
@@ -77,6 +90,7 @@ const CreateDatoLibro = () => {
   <h1 className="text-2xl font-bold text-[#063255] mb-6">Buscar Cliente y Agregar Registro</h1>
   <div className="space-y-4 mb-6">
     <input
+      required
       type="text"
       placeholder="Nombre"
       value={nombre}
@@ -84,6 +98,7 @@ const CreateDatoLibro = () => {
       className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2]"
     />
     <input
+      required
       type="text"
       placeholder="Apellido Paterno"
       value={apellidoPaterno}
@@ -91,6 +106,7 @@ const CreateDatoLibro = () => {
       className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2]"
     />
     <input
+      required
       type="text"
       placeholder="Apellido Materno"
       value={apellidoMaterno}
@@ -111,6 +127,7 @@ const CreateDatoLibro = () => {
       </h2>
       <div className="space-y-4">
         <input
+          required
           type="date"
           placeholder="Fecha de Atención"
           value={fechaAtendido}
@@ -118,13 +135,15 @@ const CreateDatoLibro = () => {
           className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2]"
         />
         <input
+          required
           type="text"
-          placeholder="Diagnostico"
+          placeholder="Diagnóstico"
           value={diagnostico}
           onChange={(e) => setDiagnostico(e.target.value)}
           className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2]"
         />
         <input
+          required
           type="text"
           placeholder="Tratamiento"
           value={tratamiento}
@@ -132,6 +151,7 @@ const CreateDatoLibro = () => {
           className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2]"
         />
         <input
+          required
           type="text"
           placeholder="Observaciones"
           value={observaciones}
