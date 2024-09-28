@@ -1,31 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const DropdownSelection = () => {
     axios.defaults.withCredentials = true;
-
-    // Calcular los meses
+    
+    const [ridFK, setRidFK] = useState('');
+    const [uid, setUid] = useState('');
+    
+    const nowName = new Date().toDateString();
+    console.log(nowName);
     const now = new Date();
     const monthNames = [
         'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
     ];
     const currentMonth = monthNames[now.getMonth()];
-
+    
     const [data, setData] = useState([]);
-    const [colegio, setColegio] = useState('');
+    const [colegio, setColegio] = useState('Todos');
     const [gestion, setGestion] = useState('2024');
     const [mes, setMes] = useState(currentMonth);
-    const [lid, setLid] = useState(null);   
-    const [details, setDetails] = useState([]);   
+    const [lid, setLid] = useState(null);
+    const [details, setDetails] = useState([]);
     const [nombre, setNombre] = useState('');
     const [apellidoPaterno, setApellidoPaterno] = useState('');
     const [apellidoMaterno, setApellidoMaterno] = useState('');
-    const [isSubmitted, setIsSubmitted] = useState(false); // Estado para saber si el botón ha sido presionado
+    const [cedula, setCedula] = useState('');
+    const [searchType, setSearchType] = useState('nombre');
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    
+    useEffect(() => {
+        const token = Cookies.get('token');
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                setRidFK(decodedToken.ridFK);
+                setUid(decodedToken.uid);
+            } catch (err) {
+                console.error('Invalid token');
+            }
+        }
+    }, []);
+    
+    useEffect(() => {
+        if (ridFK === 3) {
+            axios.get(`http://localhost:8081/getColegioInfo/${uid}`)
+                .then(res => {
+                    if (Array.isArray(res.data)) {
+                        setColegio(res.data[0].nombre);
+                    } else {
+                        alert("Error al cargar los datos");
+                    }
+                })
+                .catch(err => alert(err));
+        }
+    }, [ridFK, uid]);
 
     useEffect(() => {
-        // Obtener los datos del backend
         axios.get('http://localhost:8081/libros')
             .then(response => {
                 setData(response.data);
@@ -50,14 +89,68 @@ const DropdownSelection = () => {
 
     const handleFilter = async () => {
         try {
-            const res = await axios.get(`http://localhost:8081/anotherLibro/filter?lid=${lid}&nombre=${nombre}&apellidoPaterno=${apellidoPaterno}&apellidoMaterno=${apellidoMaterno}`);
-            setDetails(res.data);
+            const res = await axios.get(`http://localhost:8081/anotherLibro/filter?lid=${lid}&nombre=${searchType === 'nombre' ? nombre : ''}&apellidoPaterno=${searchType === 'nombre' ? apellidoPaterno : ''}&apellidoMaterno=${searchType === 'nombre' ? apellidoMaterno : ''}&cedula=${searchType === 'cedula' ? cedula : ''}&page=${page}&limit=10`);
+            const { data, totalPages, currentPage } = res.data;
+            setDetails(data);
+            setTotalPages(totalPages);
+            setPage(currentPage);
         } catch (err) {
             alert(err);
         }
     }
 
-    // Verificar si hay datos en details
+    const exportToExcel = (details) => {
+        // Crear una nueva hoja de trabajo
+        const wb = XLSX.utils.book_new();
+      
+        // Datos del encabezado con el título centrado
+        const titulo = [['REPORTE DE PACIENTES ATENDIDOS']];
+        const encabezado = [
+          ['Nombre', 'Apellidos', 'Curso', 'Médico', 'Fecha de atención', 'Diagnóstico', 'Tratamiento', 'Observaciones']
+        ];
+      
+        // Convertir los detalles en el formato necesario para agregar a la hoja
+        const datos = details.map((detail) => [
+          detail.Nombre,
+          detail.Apellidos,
+          detail.Curso,
+          detail.Médico,
+          new Date(detail.fechaAtendido).toLocaleDateString(),
+          detail.Diagnóstico,
+          detail.Tratamiento,
+          detail.Observaciones,
+        ]);
+      
+        // Combinar título, encabezado y datos
+        const ws_data = [...titulo, ...encabezado, ...datos];
+      
+        // Crear la hoja de trabajo
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      
+        // Fusionar las celdas para centrar el título en las columnas de la tabla
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+      
+        // Estilo en negrita para la cabecera
+        const headerRange = XLSX.utils.decode_range('A2:H2');
+        for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: 1, c: C }); // La cabecera está en la segunda fila
+          if (!ws[cellAddress]) continue;
+          ws[cellAddress].s = {
+            font: { bold: true }, // Establecer el texto en negrita
+          };
+        }
+      
+        // Agregar la hoja al libro
+        XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+      
+        // Generar el archivo Excel
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      
+        // Guardar el archivo Excel
+        const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+        saveAs(blob, 'Reporte_Pacientes.xlsx');
+      };
+
     const hasData = details && details.length > 0;
 
     return (
@@ -65,17 +158,21 @@ const DropdownSelection = () => {
             <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
                 <div className="flex flex-wrap justify-between items-center mb-4 space-y-2">
                     <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                        <label className="text-[#063255] font-bold">Colegio:</label>
-                        <select
-                            value={colegio}
-                            onChange={(e) => setColegio(e.target.value)}
-                            className="border border-gray-300 rounded-md p-2"
-                        >
-                            <option value="">Seleccione un colegio</option>
-                            {Array.from(new Set(data.map(item => item.nombre))).map(nombre => (
-                                <option key={nombre} value={nombre}>{nombre}</option>
-                            ))}
-                        </select>
+                    <label className="text-[#063255] font-bold">Colegio:</label>
+                        {ridFK === 3 ? (
+                            <span>{colegio}</span>
+                        ) : (
+                            <select
+                                value={colegio}
+                                onChange={(e) => setColegio(e.target.value)}
+                                className="border border-gray-300 rounded-md p-2"
+                            >
+                                <option value='Todos'>Todos</option> {/* Opción para mostrar todos */}
+                                {Array.from(new Set(data.map(item => item.nombre))).map(nombre => (
+                                    <option key={nombre} value={nombre}>{nombre}</option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                     <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
                         <label className="text-[#063255] font-bold">Gestión:</label>
@@ -84,7 +181,7 @@ const DropdownSelection = () => {
                             onChange={(e) => setGestion(e.target.value)}
                             className="border border-gray-300 rounded-md p-2"
                         >
-                            <option value="">Seleccione una gestión</option>
+                            <option value="Todos">Todos</option> {/* Opción para mostrar todos */}
                             {Array.from(new Set(data.map(item => item.gestion))).map(gestion => (
                                 <option key={gestion} value={gestion}>{gestion}</option>
                             ))}
@@ -97,7 +194,7 @@ const DropdownSelection = () => {
                             onChange={(e) => setMes(e.target.value)}
                             className="border border-gray-300 rounded-md p-2"
                         >
-                            <option value="">Seleccione un mes</option>
+                            <option value="Todos">Todos</option> {/* Opción para mostrar todos */}
                             {Array.from(new Set(data.map(item => item.mes))).map(mes => (
                                 <option key={mes} value={mes}>{mes}</option>
                             ))}
@@ -111,7 +208,6 @@ const DropdownSelection = () => {
                     </button>
                 </div>
 
-                {/* Mostrar mensaje y botón solo después de enviar */}
                 {isSubmitted && !hasData && (
                     <div className="text-center mt-6">
                         <p>No hay datos</p>
@@ -135,66 +231,130 @@ const DropdownSelection = () => {
                                     </button>
                                 </Link>
                             </div>
-                            <label htmlFor="nombre" className="text-[#063255] font-bold">Buscar asegurado por:</label>
+                            <label htmlFor="searchType" className="text-[#063255] font-bold">Buscar asegurado por:</label>
                             <div className="flex flex-wrap justify-between items-center mb-4 space-y-2">
                                 <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                                    <label className="text-[#063255] font-bold">Nombre:</label>
-                                    <input
-                                        type="text"
-                                        value={nombre}
-                                        onChange={(e) => setNombre(e.target.value)}
-                                        className="flex-1 border border-gray-300 rounded-md p-2"
-                                    />
+                                    <label className="text-[#063255] font-bold">Tipo de búsqueda:</label>
+                                    <select
+                                        value={searchType}
+                                        onChange={(e) => setSearchType(e.target.value)}
+                                        className="border border-gray-300 rounded-md p-2"
+                                    >
+                                        <option value="cedula">Carnet de Identidad</option>
+                                        <option value="nombre">Nombre</option>
+                                    </select>
                                 </div>
 
-                                {/* Filtro por Apellido Paterno */}
-                                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                                    <label className="text-[#063255] font-bold">Apellido Paterno:</label>
-                                    <input
-                                        type="text"
-                                        value={apellidoPaterno}
-                                        onChange={(e) => setApellidoPaterno(e.target.value)}
-                                        className="flex-1 border border-gray-300 rounded-md p-2"
-                                    />
-                                </div>
+                                {searchType === 'nombre' ? (
+                                    <>
+                                        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                            <label className="text-[#063255] font-bold">Nombre:</label>
+                                            <input
+                                                type="text"
+                                                value={nombre}
+                                                onChange={(e) => setNombre(e.target.value)}
+                                                className="flex-1 border border-gray-300 rounded-md p-2"
+                                            />
+                                        </div>
 
-                                {/* Filtro por Apellido Materno */}
-                                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                                    <label className="text-[#063255] font-bold">Apellido Materno:</label>
-                                    <input
-                                        type="text"
-                                        value={apellidoMaterno}
-                                        onChange={(e) => setApellidoMaterno(e.target.value)}
-                                        className="flex-1 border border-gray-300 rounded-md p-2"
-                                    />
-                                </div>
+                                        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                            <label className="text-[#063255] font-bold">Apellido Paterno:</label>
+                                            <input
+                                                type="text"
+                                                value={apellidoPaterno}
+                                                onChange={(e) => setApellidoPaterno(e.target.value)}
+                                                className="flex-1 border border-gray-300 rounded-md p-2"
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                            <label className="text-[#063255] font-bold">Apellido Materno:</label>
+                                            <input
+                                                type="text"
+                                                value={apellidoMaterno}
+                                                onChange={(e) => setApellidoMaterno(e.target.value)}
+                                                className="flex-1 border border-gray-300 rounded-md p-2"
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                        <label className="text-[#063255] font-bold">Carnet de Identidad:</label>
+                                        <input
+                                            type="text"
+                                            value={cedula}
+                                            onChange={(e) => setCedula(e.target.value)}
+                                            className="flex-1 border border-gray-300 rounded-md p-2"
+                                        />
+                                    </div>
+                                )}
 
                                 <button
                                     onClick={handleFilter}
                                     className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200"
                                 >
-                                    Enviar
+                                    Filtrar
                                 </button>
                             </div>
+                        </div>
 
-                            <table className="min-w-full border-collapse">
+                        {/* Aquí muestra los detalles */}
+                        <div className="mt-6">
+                        <div className="flex justify-end mb-4">
+                                <button
+                                    onClick={() => exportToExcel(details)}
+                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                                >
+                                    Exportar a Excel
+                                </button>
+                            </div>
+                        <table className="min-w-full border-collapse">
                                 <thead>
                                     <tr className="bg-[#063255] text-white">
-                                        {Object.keys(details[0]).map(key => (
-                                            <th key={key} className="px-4 py-2 border">{key}</th>
-                                        ))}
+                                        <th className="px-4 py-2 border">Nombre</th>
+                                        <th className="px-4 py-2 border">Apellidos</th>
+                                        <th className="px-4 py-2 border">Curso</th>
+                                        <th className="px-4 py-2 border">Médico</th>
+                                        <th className="px-4 py-2 border">Fecha de atención</th>
+                                        <th className="px-4 py-2 border">Diagnóstico</th>
+                                        <th className="px-4 py-2 border">Tratamiento</th>                                        
+                                        <th className="px-4 py-2 border">Observaciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {details.map((detail, index) => (
                                         <tr key={index} className="even:bg-gray-100">
-                                            {Object.values(detail).map((value, idx) => (
-                                                <td key={idx} className="px-4 py-2 border">{value}</td>
-                                            ))}
+                                                <td key={index} className="px-4 py-2 text-center border">{detail.Nombre}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{detail.Apellidos}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{detail.Curso}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{detail.Médico}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{new Date(detail.fechaAtendido).toLocaleDateString('es-ES')}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{detail.Diagnóstico}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{detail.Tratamiento}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{detail.Observaciones}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                        
+
+                            <div className="flex justify-center space-x-8 y-8 mt-6">
+                                <button
+                                    onClick={() => setPage(page > 1 ? page - 1 : 1)}
+                                    disabled={page === 1}
+                                    className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200"
+                                >
+                                    Anterior
+                                </button>
+                                <span className="text-center mt-2">Página {page} de {totalPages}</span>
+                                <button
+                                    onClick={() => setPage(page < totalPages ? page + 1 : totalPages)}
+                                    disabled={page === totalPages}
+                                    className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200"
+                                >
+                                    Siguiente
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

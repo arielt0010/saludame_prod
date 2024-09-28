@@ -11,6 +11,7 @@ const DocumentoPDF = async (nro, name, cash, day, month, year, codigo_alumno, cu
   const red = rgb(1, 0.1137, 0.05098);
   const blue = rgb(0.043, 0.2549, 0.6118);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const backgroundImageBytes = await fetch(background2).then(res => res.arrayBuffer());
   const backgroundImage = await pdfDoc.embedJpg(backgroundImageBytes);
@@ -53,27 +54,41 @@ const DocumentoPDF = async (nro, name, cash, day, month, year, codigo_alumno, cu
     color: blue,
   });
 
-  page.drawText(`Nro. ${nro}`, {
+  // Ajuste del margen superior entre el número y el resto del contenido
+  page.drawText(`Nro. ${nro}`, { // Convertir a string
     x: 50,
-    y: page.getHeight() - logoHeight - 50,
+    y: page.getHeight() - logoHeight - 50, // Reducido el margen
     size: 15,
-    font: font,
+    font: fontBold,
     color: red,
   });
 
-  const margin = 10; // Margen adicional para el espacio
+  // Definir la posición de las columnas
+  const labelX = 50; // Posición de las etiquetas antes de los dos puntos
+  const colonX = 180; // Posición de los dos puntos
+  const lineHeight = 25; // Reducir el espacio entre líneas de texto
+
   const content = [
-    { text: `Fecha: ${day}/${month}/${year}`, x: 50, y: page.getHeight() - logoHeight - 180 - margin, color: blue },
-    { text: `He recibido del Alumno(a): ${name.toUpperCase()}`, x: 50, y: page.getHeight() - logoHeight - 210 - margin, color: blue },
-    { text: `La suma de: ${ConversorNumeros.convertir(cash)}`, x: 50, y: page.getHeight() - logoHeight - 240 - margin, color: blue },
-    { text: `Por concepto de: ASISTENCIA MEDICA DE EMERGENCIA`, x: 50, y: page.getHeight() - logoHeight - 270 - margin, color: blue },
-    { text: `Gestion: ${anioseguro}`, x: 50, y: page.getHeight() - logoHeight - 300 - margin, color: blue },
-    { text: `Codigo del alumno: ${codigo_alumno.toUpperCase()}`, x: 50, y: page.getHeight() - logoHeight - 330 - margin, color: blue },
-    { text: `Curso: ${curso_alumno.toUpperCase()}`, x: 50, y: page.getHeight() - logoHeight - 360 - margin, color: blue },
+    { label: 'Fecha', value: `${day}/${month}/${year}`, y: page.getHeight() - logoHeight - 60 - lineHeight },
+    { label: 'Recibí de', value: name.toUpperCase(), y: page.getHeight() - logoHeight - 60 - (2 * lineHeight) },
+    { label: 'La suma de', value: ConversorNumeros.convertir(cash), y: page.getHeight() - logoHeight - 60 - (3 * lineHeight) },
+    { label: 'Por concepto de', value: 'ASISTENCIA MEDICA DE EMERGENCIA', y: page.getHeight() - logoHeight - 60 - (4 * lineHeight) },
+    { label: 'Gestion', value: anioseguro, y: page.getHeight() - logoHeight - 60 - (5 * lineHeight) },
+    { label: 'Código', value: codigo_alumno.toUpperCase(), y: page.getHeight() - logoHeight - 60 - (6 * lineHeight) },
+    { label: 'Curso', value: curso_alumno.toUpperCase(), y: page.getHeight() - logoHeight - 60 - (7 * lineHeight) },
   ];
 
-  content.forEach(({ text, x, y, color }) => {
-    page.drawText(text, { x, y, size: 15, font: font, color });
+  content.forEach(({ label, value, y }) => {
+    if (label && value && y != null) {
+      page.drawText(label, { x: labelX, y, size: 15, font: fontBold, color: blue });
+      page.drawText(':', { x: colonX, y, size: 15, font: fontBold, color: blue });
+      
+      // Calcular el nuevo valorX para alinear los valores
+      const adjustedValueX = colonX + 15; // Puedes ajustar el desplazamiento según sea necesario
+      page.drawText(value.toString(), { x: adjustedValueX, y, size: 15, font: font, color: blue });
+    } else {
+      console.error('Algunos valores están indefinidos:', { label, value, y });
+    }
   });
 
   const pdfBytes = await pdfDoc.save();

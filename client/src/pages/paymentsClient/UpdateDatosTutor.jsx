@@ -6,12 +6,26 @@ const ContactForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const {cid} = location.state;
+  const { cid } = location.state;
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({}); // Nuevo estado para errores de campo
+
+  const validateFields = () => {
+    const errors = {};
+    if (!nombre) errors.nombre = true;
+    if (!telefono) errors.telefono = true;
+    setFieldErrors(errors); // Actualiza el estado de errores
+    return Object.keys(errors).length === 0; // Devuelve verdadero si no hay errores
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateFields()) {
+      console.log('Por favor, completa todos los campos requeridos.');
+      return; // No procede si hay campos vacíos
+    }
 
     try {
       const response = await axios.post('http://localhost:8081/uploadDatosTutor', {
@@ -37,7 +51,7 @@ const ContactForm = () => {
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 flex-1"
+            className={`border p-2 flex-1 rounded-md ${fieldErrors.nombre ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Nombre"
             required
           />
@@ -48,7 +62,7 @@ const ContactForm = () => {
             type="text"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 flex-1"
+            className={`border p-2 flex-1 rounded-md ${fieldErrors.telefono ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Nro de celular"
             required
           />

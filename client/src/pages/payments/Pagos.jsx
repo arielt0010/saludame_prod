@@ -119,19 +119,19 @@ const Pagos = () => {
           </table>
         </div>
         {/* Paginación */}
-        <div className="mt-4 flex justify-between">
+        <div className="flex justify-center space-x-8 y-8 mt-6">
           <button 
             onClick={handlePreviousPage} 
             disabled={page === 1} 
-            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md"
+            className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200"
           >
             Anterior
           </button>
-          <span>Página {page} de {totalPages}</span>
+          <span className='text-center mt-2'>Página {page} de {totalPages}</span>
           <button 
             onClick={handleNextPage} 
             disabled={page === totalPages} 
-            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md"
+            className="bg-[#063255] text-white px-4 py-2 rounded-md hover:bg-[#004a6c] transition-colors duration-200"
           >
             Siguiente
           </button>

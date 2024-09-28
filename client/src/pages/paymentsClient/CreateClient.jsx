@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 const AddClientForm = () => {
     const [uid, setUid] = useState(null);
@@ -17,6 +17,7 @@ const AddClientForm = () => {
         uidFK1: 26  
     });
     const [colegios, setColegios] = useState([]);
+    const [fieldErrors, setFieldErrors] = useState({}); // Nuevo estado para errores de campo
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -61,9 +62,25 @@ const AddClientForm = () => {
         });
     };
 
+    const validateFields = () => {
+        const errors = {};
+        // Verificar campos requeridos
+        for (const key in formData) {
+            if (!formData[key]) {
+                errors[key] = true;
+            }
+        }
+        setFieldErrors(errors); // Actualiza el estado de errores
+        return Object.keys(errors).length === 0; // Devuelve verdadero si no hay errores
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(formData);
+        if (!validateFields()) {
+            console.log("Por favor, completa todos los campos requeridos.");
+            return; // No procede si hay campos vacíos
+        }
+
         try {
             const response = await axios.post('http://localhost:8081/createClient', formData);
             console.log(response);
@@ -86,7 +103,7 @@ const AddClientForm = () => {
                     name="nombre"
                     value={formData.nombre}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.nombre ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
                     required
                 />
             </div>
@@ -98,7 +115,7 @@ const AddClientForm = () => {
                     name="apellidoPaterno"
                     value={formData.apellidoPaterno}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.apellidoPaterno ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
                     required
                 />
             </div>
@@ -110,7 +127,7 @@ const AddClientForm = () => {
                     name="apellidoMaterno"
                     value={formData.apellidoMaterno}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.apellidoMaterno ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
                     required
                 />
             </div>
@@ -122,7 +139,7 @@ const AddClientForm = () => {
                     name="ci"
                     value={formData.ci}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.ci ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
                     required
                 />
             </div>
@@ -134,7 +151,7 @@ const AddClientForm = () => {
                     name="fechaNacimiento"
                     value={formData.fechaNacimiento}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.fechaNacimiento ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
                     required
                 />
             </div>
@@ -145,7 +162,7 @@ const AddClientForm = () => {
                     name="colegio"
                     value={formData.colegio}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.colegio ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
                     required
                 >
                     {colegios.map(colegio => (
@@ -163,7 +180,7 @@ const AddClientForm = () => {
                     name="curso"
                     value={formData.curso}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.curso ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
                     required
                 />
             </div>

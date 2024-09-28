@@ -43,6 +43,7 @@ const Navbar = ({ toggleSidebar, isSidebarVisible, title }) => {
         <h1 className="text-xl">{title}</h1>
       </div>
       {auth ? (
+        
       <div className="relative">
         <FaUserCircle onClick={handleMenuToggle} className="text-2xl cursor-pointer" />
         {menuOpen && (

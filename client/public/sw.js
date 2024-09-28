@@ -2,7 +2,6 @@
 const CACHE_NAME = 'my-app-cache-v1';
 const urlsToCache = [
   '/',
-  '/users',
   '/pagos',
   // Añade otros recursos que quieras cachear
 ];

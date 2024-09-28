@@ -259,7 +259,7 @@ app.put('/update/:id', verifyUser,checkRole(1), (req, res) =>{
         // Si hay una contraseña, hashearla y actualizar todos los campos
         bcrypt.hash(password, salt, (err, hash) => {
             if (err) return res.json({ Error: "Error from hashing password" });
-            const q2 = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `contraseña` = ?, `ridFK` = ? , `estado` = ?, `apellidoPaterno` = ?, `apellidoMaterno` = ? , `solicitudRestablecimiento` = 0 WHERE uid = ?';
+            const q2 = 'UPDATE usuario SET `nombre` = ?, `usuario` = ?, `contraseña` = ?, `ridFK` = ? , `estado` = ?, `apellidoPaterno` = ?, `apellidoMaterno` = ? , `solicitudRestablecimiento` = 0, `necesitaContraseña` = 1 WHERE uid = ?';
             const values = [name, user, hash, ridFK, estado, apellidoPaterno, apellidoMaterno, id];
             db.query(q2, values, (err, result) => {
                 if (err) return res.json({ Error: "Inserting data error in server" });
@@ -272,7 +272,22 @@ app.put('/update/:id', verifyUser,checkRole(1), (req, res) =>{
 
 /* CONSULTAS LIBRO DE OBSERVACIONES */
 
-app.get('/libros', (req,res) => {
+//obtener nombre colegio para filtrar libros si ridFK = 3
+app.get('/getColegioInfo/:uid', (req, res) => {
+    const q = "select col.nombre from colegio col where col.usuarioAsignado = ?";
+    const uid = req.params.uid;
+    db.query(q, [uid], (err, result) => {
+        if (err) return res.status(500).json({ Error: "Error inside server" });
+        else if (result.length > 0) {
+            return res.status(200).json(result);
+        } else {
+            res.status(404).json({ Error: 'No existen datos' });
+        }
+    });
+});
+
+//obtener colegio, gestion y mes para filtrar libros
+app.get('/libros', verifyUser,(req,res) => {
     const q = 'select l.lid, col.nombre, l.gestion, l.mes from libro_consulta l join colegio col on l.colegioFK2 = col.cid;';
     db.query(q, (err, result) => {
         if(err) 
@@ -285,24 +300,24 @@ app.get('/libros', (req,res) => {
     })
 })
 
+//libros filtrados por colegio, gestion y mes
 app.get('/libros/filter' ,(req,res) => {
-        const { colegio, gestion, mes } = req.query;
-        const query = 'select l.lid from libro_consulta l join colegio col on l.colegioFK2 = col.cid where col.nombre = ? and l.gestion = ? and l.mes = ?';
-        db.query(query, [colegio, gestion, mes], (err, results) => {
-          if (err) {
-            console.error('Error fetching libro:', err);
-            res.status(500).json({ error: 'Error en el servidor' });
-          } else if (results.length > 0) {
-            res.json({ lid: results[0].lid });
-          } else {
-            res.status(404).json({ error: 'Libro no encontrado' });
-          }
-        });
+    const { colegio, gestion, mes } = req.query;
+    const query = 'select l.lid from libro_consulta l join colegio col on l.colegioFK2 = col.cid where col.nombre = ? and l.gestion = ? and l.mes = ?';
+    db.query(query, [colegio, gestion, mes], (err, results) => {
+      if (err) {
+        console.error('Error fetching libro:', err);
+        res.status(500).json({ error: 'Error en el servidor' });
+      } else if (results.length > 0) {
+        res.json({ lid: results[0].lid });
+      } else {
+        res.status(404).json({ error: 'Libro no encontrado' });
+      }
+    });
 })
 
-//query para ver todos
 app.get('/libros/:lid', (req,res) => {
-    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=? order by d.fechaAtendido desc";
+    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso as 'Curso', CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as 'Médico', d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=? order by d.fechaAtendido desc";
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
@@ -312,33 +327,83 @@ app.get('/libros/:lid', (req,res) => {
     })
 })
 
-//query para ver solo 1 dato
-app.get('/libroOne/:lid', (req,res) => {
-    const q = 'select fechaAtendido, diagnostico, tratamiento, observaciones from consulta_medica where did = ?';
-    const {lid} = req.params.lid;
+//filtrar por asegurado
+app.get('/anotherLibro/filter', verifyUser, (req, res) => {
+    const { lid, nombre, apellidoPaterno, apellidoMaterno, cedula, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
 
-    db.query(q, [lid], (err, result) => {
-        if(err) return res.json({Error: "Error inside server"});
-        return res.json(result);
-    })
-})
+    // Condiciones de búsqueda
+    const conditions = [];
+    const params = [lid];
 
-app.get('/anotherLibro/filter', (req, res) => {
-    const { lid, nombre, apellidoPaterno, apellidoMaterno } = req.query;
+    // Si se busca por nombre completo
+    if (nombre || apellidoPaterno || apellidoMaterno) {
+        if (nombre) {
+            conditions.push(`c.nombre = ?`);
+            params.push(nombre);
+        }
+        if (apellidoPaterno) {
+            conditions.push(`c.apellidoPaterno = ?`);
+            params.push(apellidoPaterno);
+        }
+        if (apellidoMaterno) {
+            conditions.push(`c.apellidoMaterno = ?`);
+            params.push(apellidoMaterno);
+        }
+    }
 
-    const q = "SELECT d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' FROM consulta_medica d JOIN cliente c ON d.cidFK2 = c.cid JOIN usuario u ON d.uidFK3 = u.uid JOIN libro_consulta l ON d.lidFK1 = l.lid WHERE lid=? AND c.nombre = ? AND c.apellidoPaterno = ? AND c.apellidoMaterno = ? ORDER BY d.fechaAtendido DESC";
-    db.query(q, [lid, nombre, apellidoPaterno, apellidoMaterno], (err, result) => {
+    // Si se busca por cédula
+    if (cedula) {
+        conditions.push(`c.carnetIdentidad = ?`);
+        params.push(cedula);
+    }
+
+    const whereClause = conditions.length > 0 ? `AND (${conditions.join(' OR ')})` : '';
+
+    const query = `SELECT c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso as 'Curso', 
+                   CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, 
+                   d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones'
+                   FROM consulta_medica d 
+                   JOIN cliente c ON d.cidFK2 = c.cid 
+                   JOIN usuario u ON d.uidFK3 = u.uid 
+                   JOIN libro_consulta l ON d.lidFK1 = l.lid 
+                   WHERE lid=? ${whereClause} 
+                   ORDER BY d.fechaAtendido DESC LIMIT ? OFFSET ?`;
+    
+    const countQuery = `SELECT COUNT(*) as total 
+                        FROM consulta_medica d 
+                        JOIN cliente c ON d.cidFK2 = c.cid 
+                        JOIN usuario u ON d.uidFK3 = u.uid 
+                        JOIN libro_consulta l ON d.lidFK1 = l.lid 
+                        WHERE lid=? ${whereClause}`;
+
+    // Contar resultados
+    db.query(countQuery, params, (err, countResult) => {
         if (err) {
-            console.error('Error en la consulta:', err);
-            return res.json({ Error: "Error en el servidor" });
+            console.error('Error counting results:', err);
+            return res.status(500).json({ error: 'Error en el servidor' });
         }
-        if (result.length > 0) {
-            return res.json(result);
-        } else {
-            return res.json({ Error: "No existen datos" });
-        }
+
+        const total = countResult[0].total;
+        db.query(query, [...params, parseInt(limit), parseInt(offset)], (err, result) => {
+            if (err) {
+                console.error('Error en la consulta:', err);
+                return res.status(500).json({ error: "Error en el servidor" });
+            }
+            if (result.length > 0) {
+                return res.json({
+                    data: result,
+                    total,
+                    totalPages: Math.ceil(total / limit),
+                    currentPage: parseInt(page)
+                });
+            } else {
+                return res.json({ error: "No existen datos" });
+            }
+        });
     });
 });
+
 
 app.get('/getColegioIdLibro/:lid', (req, res) => {
   const q = "select * from libro_consulta where lid = ?";
@@ -350,24 +415,43 @@ app.get('/getColegioIdLibro/:lid', (req, res) => {
   });
 });
 
-app.get('/searchClienteLibro',(req, res) => {
-    const {nombre, apellidoPaterno, apellidoMaterno, colegio} = req.query;
-    const q = "select cid, nombre, apellidoPaterno, apellidoMaterno" +
-    " from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ? and colegio=?;";
-    db.query(q, [nombre, apellidoPaterno, apellidoMaterno, colegio], (err, result) => {
-        if(err) return res.json({Error: "Error inside server"});
-        else if (result.length > 0) {
-            console.log(res.json(result));
-            return res.json(result);
-            
-        }else{
-            res.status(404).json({Error: 'No existen clientes' });
+//buscar cliente para crear datos libro de observaciones
+app.get('/searchClienteLibro', (req, res) => {
+    const { nombre, apellidoPaterno, apellidoMaterno, cedula, colegioId} = req.query;
+    let q = "SELECT cid, nombre, apellidoPaterno, apellidoMaterno FROM cliente WHERE ";
+    const params = [];
+
+    if (cedula) {
+        q += "carnetIdentidad = ?";
+        params.push(cedula);
+    } else {
+        if (nombre) {
+            q += "nombre = ?";
+            params.push(nombre);
         }
-    })
-})
+        if (apellidoPaterno) {
+            q += " AND apellidoPaterno = ?";
+            params.push(apellidoPaterno);
+        }
+        if (apellidoMaterno) {
+            q += " AND apellidoMaterno = ?";
+            params.push(apellidoMaterno);
+        }
+    }
+    q += " and colegio = ?";
+    params.push(colegioId);
+    db.query(q, params, (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        else if (result.length > 0) {
+            return res.json(result);
+        } else {
+            res.status(404).json({ Error: 'No existen asegurados' });
+        }
+    });
+});
 
 //crear datos libro de observaciones
-app.post('/createRegistro/:lid', (req, res) => {
+app.post('/createRegistro/:lid', verifyUser, (req, res) => {
     const q = "INSERT INTO consulta_medica (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `"
     + "cidFK2`, `uidFK3`, `lidFK1`)VALUES (?, ?, ?, ?, ?, ?, ?)";
     const values = [req.body.fechaAtendido, req.body.diagnostico, req.body.tratamiento, req.body.observaciones, 
@@ -380,37 +464,18 @@ app.post('/createRegistro/:lid', (req, res) => {
         return res.json({ Status: "Success" });
     });
 })
-//actualizar datos libro de observaciones
-app.put('/updateRegLibro/:id', (req, res) =>{
-    const id = req.params.lid;
-    const { fechaAtendido, diagnostico, tratamiento, observaciones} = req.body;
-    const q = 'UPDATE consulta_medica SET `fechaAtendido` = ?, `diagnostico` = ?, `tratamiento` = ?, `observaciones` = ? WHERE did = ?';
-    const values = [fechaAtendido, diagnostico, tratamiento, observaciones, id];
-    db.query(q, values, (err, result) => {
-        if (err) return res.json({ Error: "Error inside server" });
-        return res.json(result);
-    });
-})
 
-//eliminar datos libro de observaciones
-app.delete('/deleteRegLibro/:id', (req, res) => {
-    const q = "delete from consulta_medica where did = ?"
-    const id = req.params.id;
-    db.query(q, [id], (err, result) => {
-        if (err) return res.json({ Error: "Error inside server" });
-        return res.json(result);
-    });
-})
 
 /* CONSULTA DE PAGOS */
 
 //query para ver todos
-app.get('/pagos', (req, res) => {
+app.get('/pagos', verifyUser, (req, res) => {
     const limit = parseInt(req.query.limit) || 15;  // Tamaño de página
     const page = parseInt(req.query.page) || 1;  // Página actual
     const offset = (page - 1) * limit;  // Desplazamiento
 
-    const q = `SELECT p.pid AS 'Id', 
+    const q = `SELECT  
+                      p.pid as Id,
                       CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) AS 'Nombre',
                       col.nombre AS Colegio, 
                       c.curso AS Curso, 
@@ -457,7 +522,7 @@ app.get('/pagos', (req, res) => {
 
 
 //filtrar
-app.get('/pagos/filter' ,(req,res) => {
+app.get('/pagos/filter' , verifyUser, (req,res) => {
     const { colegio, gestion } = req.query;
     const query = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre', col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid where col.nombre = ? and p.gestion = ?";
     db.query(query, [colegio, gestion], (err, results) => {
@@ -472,33 +537,43 @@ app.get('/pagos/filter' ,(req,res) => {
     });
 })
 
-//eliminar
-app.delete('/deletePayment/:id', (req, res) => {
-    const q = "delete from pago where pid = ?"
-    const id = req.params.id;
-    db.query(q, [id], (err, result) => {
-        if (err) return res.status(500).json({ Error: "Error inside server" });
-        return res.json(result);
-    });
-})
-
 //buscar al cliente para registrar pago 
-app.get('/searchCliente',(req, res) => {
-    const {nombre, apellidoPaterno, apellidoMaterno} = req.query;
-    const q = "select cid, nombre, apellidoPaterno, apellidoMaterno" +
-    " from cliente where nombre = ? and apellidoPaterno = ? and apellidoMaterno = ?;";
-    db.query(q, [nombre, apellidoPaterno, apellidoMaterno], (err, result) => {
-        if(err) return res.json({Error: "Error inside server"});
+app.get('/searchCliente', (req, res) => {
+    const { nombre, apellidoPaterno, apellidoMaterno, cedula } = req.query;
+    let q = "SELECT cid, nombre, apellidoPaterno, apellidoMaterno FROM cliente WHERE ";
+    const params = [];
+
+    if (cedula) {
+        q += "carnetIdentidad = ?";
+        params.push(cedula);
+    } else {
+        if (nombre) {
+            q += "nombre = ?";
+            params.push(nombre);
+        }
+        if (apellidoPaterno) {
+            q += " AND apellidoPaterno = ?";
+            params.push(apellidoPaterno);
+        }
+        if (apellidoMaterno) {
+            q += " AND apellidoMaterno = ?";
+            params.push(apellidoMaterno);
+        }
+    }
+
+    db.query(q, params, (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
         else if (result.length > 0) {
             return res.json(result);
-        }else{
-            res.status(404).json({Error: 'No existen pagos' });
+        } else {
+            res.status(404).json({ Error: 'No existen pagos' });
         }
-    })
-})
+    });
+});
+
 
 //insertar pago
-app.post('/createPayment', (req, res) => {
+app.post('/createPayment', verifyUser, (req, res) => {
     const { gestion, fechaPago, formaPago, monto, cid_fk, uid_fk2} = req.body;
 
     const fechaAgregado = new Date(); // Fecha actual del sistema
@@ -518,7 +593,7 @@ app.post('/createPayment', (req, res) => {
   });
  
   //aprobar pago
-  app.put('/aprobarPago/:id', (req, res) =>{
+  app.put('/aprobarPago/:id', verifyUser, (req, res) =>{
     const id = req.params.id;
     const q = 'UPDATE pago SET `estado`= 1 WHERE pid = ?';
     const values = [id];

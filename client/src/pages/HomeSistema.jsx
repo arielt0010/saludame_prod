@@ -57,16 +57,11 @@ const HomeSistema = () => {
       ) : (
         <div>
           <h3 className="text-lg font-semibold mb-2 text-red-500">{message}</h3>
-          <h3 className="text-md mb-4">No tienes permisos para acceder a esta página.</h3>
-          <div className="space-y-2">
+          <h3 className="text-md spacemb-4">No tienes permisos para acceder a esta página.</h3>
+          <div className="space-y-2 mt-4">
             <Link to="/login">
               <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-200 w-full">
                 Iniciar sesión
-              </button>
-            </Link>
-            <Link to="/">
-              <button className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200 w-full pt-4">
-                Volver al inicio
               </button>
             </Link>
           </div>
