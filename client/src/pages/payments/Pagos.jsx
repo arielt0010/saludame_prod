@@ -1,19 +1,20 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { utils, writeFile } from 'xlsx';
 import GeneradorPDF from '../../components/GeneradorPDF';
 
 const Pagos = () => {
   axios.defaults.withCredentials = true;
   const [data, setData] = useState([]);
-  const [page, setPage] = useState(1);  // Página actual
-  const [totalPages, setTotalPages] = useState(1); // Total de páginas
+  const [page, setPage] = useState(1);  
+  const [totalPages, setTotalPages] = useState(1); 
 
   const fetchData = (currentPage) => {
     axios.get(`http://localhost:8081/pagos?page=${currentPage}&limit=15`)
       .then(res => {
-        setData(res.data.items); // Suponiendo que 'items' es el array de pagos
-        setTotalPages(res.data.totalPages); // Total de páginas
+        setData(res.data.items);
+        setTotalPages(res.data.totalPages); 
       })
       .catch(err => alert(err));
   };
@@ -52,67 +53,85 @@ const Pagos = () => {
     if (page > 1) setPage(page - 1);
   };
 
+  const handleExportAllExcel = () => {
+    axios.get('http://localhost:8081/pagos?all=true')  
+      .then((response) => {
+        const allData = response.data;
+        const worksheet = utils.json_to_sheet(allData);
+        const workbook = utils.book_new();
+        utils.book_append_sheet(workbook, worksheet, 'Pagos');
+        writeFile(workbook, 'Pagos_Todos.xlsx');
+      })
+      .catch(err => alert('Error al exportar datos: ' + err));
+  };
+
   return (
     <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
       <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex justify-between">
           <button
             onClick={handleCreate}
             className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
           >
             Crear pago
           </button>
+          <button
+            onClick={handleExportAllExcel}
+            className="bg-[#4CAF50] text-white px-4 py-2 rounded-md hover:bg-[#45a049] transition-colors duration-200"
+          >
+            Exportar todos los pagos a Excel
+          </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
+        {/* Eliminamos el overflow-x-auto y ajustamos la tabla */}
+        <div className="w-full max-w-full">
+          <table className="w-full table-auto border-collapse">
             <thead>
               <tr className="bg-[#063255] text-white">
-                {/* Cabezera de la tabla */}
                 <th className="px-4 py-2 border">Id</th>
-                  <th className="px-4 py-2 border">Nombre</th>
-                  <th className="px-4 py-2 border">Colegio</th>
-                  <th className="px-4 py-2 border">Curso</th>
-                  <th className="px-4 py-2 border">Gestión</th>
-                  <th className="px-4 py-2 border">Fecha de pago</th>
-                  <th className="px-4 py-2 border">Monto</th>
-                  <th className="px-4 py-2 border">Forma de pago</th>
-                  <th className="px-4 py-2 border">Usuario</th>
-                  <th className="px-4 py-2 border">Fecha agregado</th>
-                  <th className="px-4 py-2 border">Estado</th>
-                  <th className="px-4 py-2 border">Acción</th>
+                <th className="px-4 py-2 border">Nombre</th>
+                <th className="px-4 py-2 border">Colegio</th>
+                <th className="px-4 py-2 border">Curso</th>
+                <th className="px-4 py-2 border">Gestión</th>
+                <th className="px-4 py-2 border">Fecha de pago</th>
+                <th className="px-4 py-2 border">Monto</th>
+                <th className="px-4 py-2 border">Forma de pago</th>
+                <th className="px-4 py-2 border">Usuario</th>
+                <th className="px-4 py-2 border">Fecha agregado</th>
+                <th className="px-4 py-2 border">Estado</th>
+                <th className="px-4 py-2 border">Acción</th>
               </tr>
             </thead>
             <tbody>
               {data.map((pagos, index) => (
                 <tr key={index} className="even:bg-gray-100">
-                    <td className="px-4 py-2 border">{pagos.Id}</td>
-                    <td className="px-4 py-2 border">{pagos.Nombre}</td>
-                    <td className="px-4 py-2 border">{pagos.Colegio}</td>
-                    <td className="px-4 py-2 border">{pagos.Curso}</td>
-                    <td className="px-4 py-2 border">{pagos.Gestion}</td>
-                    <td className="px-4 py-2 border">{new Date(pagos.fechaPago).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 border">{pagos.monto}</td>
-                    <td className="px-4 py-2 border">{pagos.formaPago}</td>
-                    <td className="px-4 py-2 border">{pagos.usuario}</td>
-                    <td className="px-4 py-2 border">{new Date(pagos.fechaAgregado).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 border">{pagos.Estado}</td>
-                    <td className="px-4 py-2 border">
-                      {pagos.Estado === "Aprobado" ? 
-                        <button
-                          onClick={() => handleCreatePDF(pagos)}
-                          className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
-                        >
-                          Descargar recibo
-                        </button>
-                      :
-                        <button
-                          onClick={() => handleApprove(pagos)}
-                          className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
-                        >
-                          Aprobar pago
-                        </button>
-                      }
-                    </td>
+                  <td className="px-4 py-2 border">{pagos.Id}</td>
+                  <td className="px-4 py-2 border">{pagos.Nombre}</td>
+                  <td className="px-4 py-2 border">{pagos.Colegio}</td>
+                  <td className="px-4 py-2 border">{pagos.Curso}</td>
+                  <td className="px-4 py-2 border">{pagos.Gestion}</td>
+                  <td className="px-4 py-2 border">{new Date(pagos.fechaPago).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 border">{pagos.monto}</td>
+                  <td className="px-4 py-2 border">{pagos.formaPago}</td>
+                  <td className="px-4 py-2 border">{pagos.usuario}</td>
+                  <td className="px-4 py-2 border">{new Date(pagos.fechaAgregado).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 border">{pagos.Estado}</td>
+                  <td className="px-4 py-2 border">
+                    {pagos.Estado === "Aprobado" ? 
+                      <button
+                        onClick={() => handleCreatePDF(pagos)}
+                        className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                      >
+                        Descargar recibo
+                      </button>
+                    :
+                      <button
+                        onClick={() => handleApprove(pagos)}
+                        className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                      >
+                        Aprobar pago
+                      </button>
+                    }
+                  </td>
                 </tr>
               ))}
             </tbody>
