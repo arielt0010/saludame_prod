@@ -7,14 +7,23 @@ import GeneradorPDF from '../../components/GeneradorPDF';
 const Pagos = () => {
   axios.defaults.withCredentials = true;
   const [data, setData] = useState([]);
-  const [page, setPage] = useState(1);  
-  const [totalPages, setTotalPages] = useState(1); 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Nuevos estados para el filtro
+  const [filtroTipo, setFiltroTipo] = useState(''); // Para controlar el tipo de filtro (CI o nombre completo)
+  const [ci, setCi] = useState(''); // Valor del CI
+  const [nombreCompleto, setNombreCompleto] = useState({
+    nombre: '',
+    apellidoPaterno: '',
+    apellidoMaterno: ''
+  });
 
   const fetchData = (currentPage) => {
     axios.get(`http://localhost:8081/pagos?page=${currentPage}&limit=15`)
       .then(res => {
         setData(res.data.items);
-        setTotalPages(res.data.totalPages); 
+        setTotalPages(res.data.totalPages);
       })
       .catch(err => alert(err));
   };
@@ -53,16 +62,41 @@ const Pagos = () => {
     if (page > 1) setPage(page - 1);
   };
 
-  const handleExportAllExcel = () => {
-    axios.get('http://localhost:8081/pagos?all=true')  
-      .then((response) => {
-        const allData = response.data;
-        const worksheet = utils.json_to_sheet(allData);
-        const workbook = utils.book_new();
-        utils.book_append_sheet(workbook, worksheet, 'Pagos');
-        writeFile(workbook, 'Pagos_Todos.xlsx');
-      })
-      .catch(err => alert('Error al exportar datos: ' + err));
+
+  const handleFilter = () => {
+    let tipoFiltro = '';
+    let valorFiltro = '';
+  
+    if (filtroTipo === 'ci' && ci) {
+      tipoFiltro = 'ci';
+      valorFiltro = ci;
+    } else if (filtroTipo === 'nombre') {
+      const { nombre, apellidoPaterno, apellidoMaterno } = nombreCompleto;
+      if (nombre && apellidoPaterno && apellidoMaterno) {
+        tipoFiltro = 'nombre';
+        valorFiltro = `${nombre} ${apellidoPaterno} ${apellidoMaterno}`;
+      } else {
+        alert('Por favor completa todos los campos de nombre completo para aplicar el filtro.');
+        return;
+      }
+    } else {
+      alert('Por favor selecciona un tipo de filtro y llena los campos.');
+      return;
+    }
+  
+    axios.get(`http://localhost:8081/pagosFiltrados`, {
+      params: {
+        tipo: tipoFiltro,
+        valor: valorFiltro,
+        page: page,  // Incluye la paginación
+        limit: 15    // Puedes ajustar este valor si es necesario
+      }
+    })
+    .then(res => {
+      setData(res.data.items);
+      setTotalPages(res.data.totalPages);
+    })
+    .catch(err => alert('Error al aplicar el filtro: ' + err));
   };
 
   return (
@@ -75,14 +109,67 @@ const Pagos = () => {
           >
             Crear pago
           </button>
-          <button
-            onClick={handleExportAllExcel}
-            className="bg-[#4CAF50] text-white px-4 py-2 rounded-md hover:bg-[#45a049] transition-colors duration-200"
+        </div>
+
+        {/* Filtros */}
+        <div className="mb-4">
+          <select
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value)}
+            className="px-4 py-2 border rounded-md"
           >
-            Exportar todos los pagos a Excel
+            <option value="">Seleccionar filtro</option>
+            <option value="ci">Carnet de Identidad</option>
+            <option value="nombre">Nombre Completo</option>
+          </select>
+
+          {filtroTipo === 'ci' && (
+            <div className="mt-2">
+              <input
+                type="text"
+                placeholder="Ingresa el CI"
+                value={ci}
+                onChange={(e) => setCi(e.target.value)}
+                className="px-4 py-2 border rounded-md"
+              />
+            </div>
+          )}
+
+          {filtroTipo === 'nombre' && (
+            <div className="mt-2 space-y-2">
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={nombreCompleto.nombre}
+                onChange={(e) => setNombreCompleto({ ...nombreCompleto, nombre: e.target.value })}
+                className="px-4 py-2 border rounded-md"
+              />
+              <input
+                type="text"
+                placeholder="Apellido Paterno"
+                value={nombreCompleto.apellidoPaterno}
+                onChange={(e) => setNombreCompleto({ ...nombreCompleto, apellidoPaterno: e.target.value })}
+                className="px-4 py-2 border rounded-md"
+              />
+              <input
+                type="text"
+                placeholder="Apellido Materno"
+                value={nombreCompleto.apellidoMaterno}
+                onChange={(e) => setNombreCompleto({ ...nombreCompleto, apellidoMaterno: e.target.value })}
+                className="px-4 py-2 border rounded-md"
+              />
+            </div>
+          )}
+
+          <button
+            onClick={handleFilter}
+            className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200 mt-4"
+          >
+            Filtrar
           </button>
         </div>
-        {/* Eliminamos el overflow-x-auto y ajustamos la tabla */}
+
+        {/* Tabla de pagos */}
         <div className="w-full max-w-full">
           <table className="w-full table-auto border-collapse">
             <thead>
@@ -96,7 +183,6 @@ const Pagos = () => {
                 <th className="px-4 py-2 border">Monto</th>
                 <th className="px-4 py-2 border">Forma de pago</th>
                 <th className="px-4 py-2 border">Usuario</th>
-                <th className="px-4 py-2 border">Fecha agregado</th>
                 <th className="px-4 py-2 border">Estado</th>
                 <th className="px-4 py-2 border">Acción</th>
               </tr>
@@ -113,7 +199,6 @@ const Pagos = () => {
                   <td className="px-4 py-2 border">{pagos.monto}</td>
                   <td className="px-4 py-2 border">{pagos.formaPago}</td>
                   <td className="px-4 py-2 border">{pagos.usuario}</td>
-                  <td className="px-4 py-2 border">{new Date(pagos.fechaAgregado).toLocaleDateString()}</td>
                   <td className="px-4 py-2 border">{pagos.Estado}</td>
                   <td className="px-4 py-2 border">
                     {pagos.Estado === "Aprobado" ? 
@@ -137,6 +222,7 @@ const Pagos = () => {
             </tbody>
           </table>
         </div>
+
         {/* Paginación */}
         <div className="flex justify-center space-x-8 y-8 mt-6">
           <button 

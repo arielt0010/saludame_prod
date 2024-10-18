@@ -127,17 +127,21 @@ const CreateDatoLibro = () => {
 
     const validateFields = () => {
         const errors = {};
-        if (!nombre) errors.nombre = true;
-        if (!apellidoPaterno) errors.apellidoPaterno = true;
-        if (!apellidoMaterno) errors.apellidoMaterno = true;
-        if (!cedula) errors.cedula = true;
+        if (criterioBusqueda === 'nombre') {
+            if (!nombre) errors.nombre = true;
+            if (!apellidoPaterno) errors.apellidoPaterno = true;
+            if (!apellidoMaterno) errors.apellidoMaterno = true;
+        }
+        if (criterioBusqueda === 'cedula' && !cedula) {
+            errors.cedula = true;
+        }
         if (!fechaAtendido) errors.fechaAtendido = true;
         if (!diagnostico) errors.diagnostico = true;
         if (!tratamiento) errors.tratamiento = true;
         if (!observaciones) errors.observaciones = true;
-
-        setFieldErrors(errors); // Actualiza el estado de errores
-        return Object.keys(errors).length === 0; // Devuelve verdadero si no hay errores
+    
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleAgregarRegistro = async () => {

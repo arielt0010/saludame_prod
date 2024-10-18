@@ -520,22 +520,76 @@ app.get('/pagos', verifyUser, (req, res) => {
     });
 });
 
+app.get('/pagosFiltrados', verifyUser, (req, res) => {
+    const limit = parseInt(req.query.limit) || 15;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+    
+    const tipoFiltro = req.query.tipo || '';
+    const valorFiltro = req.query.valor || '';
 
-//filtrar
-app.get('/pagos/filter' , verifyUser, (req,res) => {
-    const { colegio, gestion } = req.query;
-    const query = "select p.pid as 'Id', CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) as 'Nombre', col.nombre as Colegio, c.curso as Curso, p.gestion as Gestion,  p.fechaPago , p.monto, f.nombrePago as 'formaPago', u.usuario, p.fechaAgregado from pago p join cliente c on p.cidFK1 = c.cid join usuario u on p.uidFK2= u.uid join colegio col on c.colegio = col.cid join forma_pago f on p.formaPago = f.fid where col.nombre = ? and p.gestion = ?";
-    db.query(query, [colegio, gestion], (err, results) => {
-      if (err) {
-        console.error('Error fetching pago:', err);
-        res.status(500).json({Error: 'Error en el servidor' });
-      } else if (results.length > 0) {
-        res.json({ lid: results[0].lid });
-      } else {
-        res.status(404).json({Error: 'Pago no encontrado' });
-      }
+    let q = `
+        SELECT  
+            p.pid as Id,
+            CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) AS 'Nombre',
+            col.nombre AS Colegio, 
+            c.curso AS Curso, 
+            p.gestion AS Gestion,  
+            p.fechaPago, 
+            p.monto, 
+            f.nombrePago AS 'formaPago', 
+            u.usuario, 
+            p.fechaAgregado, 
+            CASE 
+                WHEN p.estado = 1 THEN 'Aprobado' 
+                ELSE 'Por aprobar' 
+            END AS 'Estado' 
+        FROM pago p
+        JOIN cliente c ON p.cidFK1 = c.cid 
+        JOIN usuario u ON p.uidFK2 = u.uid 
+        JOIN colegio col ON c.colegio = col.cid 
+        JOIN forma_pago f ON p.formaPago = f.fid `;
+
+    if (tipoFiltro === 'nombre') {
+        q += `WHERE CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) LIKE ? `;
+    } else if (tipoFiltro === 'ci') {
+        q += `WHERE c.carnetIdentidad LIKE ? `;
+    }
+
+    q += `ORDER BY fechaAgregado DESC LIMIT ? OFFSET ?`;
+
+    const valor = `%${valorFiltro}%`;
+
+    db.query(q, [valor, limit, offset], (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        else if (result.length > 0) {
+            const countQuery = `SELECT COUNT(*) AS total FROM pago p JOIN cliente c ON p.cidFK1 = c.cid`;
+            let countCondition = '';
+
+            if (tipoFiltro === 'nombre') {
+                countCondition = `WHERE CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) LIKE ?`;
+            } else if (tipoFiltro === 'ci') {
+                countCondition = `WHERE c.carnetIdentidad LIKE ?`;
+            }
+
+            db.query(countQuery + ' ' + countCondition, [valor], (err, countResult) => {
+                if (err) return res.json({ Error: "Error fetching total count" });
+
+                const totalItems = countResult[0].total;
+                const totalPages = Math.ceil(totalItems / limit);
+
+                return res.status(200).json({
+                    items: result,
+                    totalPages: totalPages,
+                    currentPage: page
+                });
+            });
+        } else {
+            res.status(404).json({ Error: 'No existen pagos' });
+        }
     });
-})
+});
+
 
 //buscar al cliente para registrar pago 
 app.get('/searchCliente', (req, res) => {
