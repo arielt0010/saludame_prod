@@ -1,7 +1,5 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { utils, writeFile } from 'xlsx';
 import GeneradorPDF from '../../components/GeneradorPDF';
 
 const Pagos = () => {
@@ -18,6 +16,8 @@ const Pagos = () => {
     apellidoPaterno: '',
     apellidoMaterno: ''
   });
+
+  const [filtroEstado, setFiltroEstado] = useState(''); 
 
   //imagen superpuesta
   const [selectedImage, setSelectedImage] = useState(null); // Para almacenar la imagen seleccionada
@@ -36,11 +36,6 @@ const Pagos = () => {
     fetchData(page);
   }, [page]);
 
-  const navigate = useNavigate();
-
-  const handleCreate = () => {
-    navigate("/createPayment");
-  };
 
   const handleCreatePDF = (pagos) => {
     const { Id, Nombre, Curso, Gestion, fechaPago, monto } = pagos;
@@ -70,6 +65,10 @@ const Pagos = () => {
   const handleFilter = () => {
     let tipoFiltro = '';
     let params = {};
+
+    if (filtroEstado) {
+      params.estado = filtroEstado; // 'Aprobado' o 'Pendiente'
+    }
   
     if (filtroTipo === 'ci' && ci) {
       tipoFiltro = 'ci';
@@ -95,10 +94,8 @@ const Pagos = () => {
         alert('Por favor llena al menos uno de los campos del nombre.');
         return;
       }
-    } else {
-      alert('Por favor selecciona un tipo de filtro y llena los campos.');
-      return;
-    }
+    } 
+    
   
     // Realizar la solicitud con los parámetros correctos
     axios.get('http://localhost:8081/pagosFiltrados', { params })
@@ -147,7 +144,7 @@ const Pagos = () => {
     <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
       <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
         <div className="mb-4 flex justify-between">
-          <h1 className='text-3xl font-bold text-[#063255] mb-3'>Pagos</h1>
+          <h1 className='text-3xl font-bold text-center text-[#063255] mb-3'>Reporte de pagos</h1>
         </div>
         
         {/*Filtros */}
@@ -204,6 +201,21 @@ const Pagos = () => {
             />
           </div>
         )}
+
+          {/* Checkbox para el estado */}
+        <div className="flex items-center ml-4">
+            <label className="text-[#063255] font-bold">Estado:</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+              className="border border-gray-300 rounded-md p-2 ml-2"
+            >
+              <option value="">Seleccionar estado</option>
+              <option value="1">Aprobado</option>
+              <option value="0">Pendiente</option>
+            </select>
+        </div>
+
         <button
           onClick={handleFilter}
           className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200 mt-4 ml-4"
@@ -283,7 +295,7 @@ const Pagos = () => {
               <img 
                 src={selectedImage} 
                 alt="Comprobante" 
-                className="max-w-[70%] max-h-[70%] object-contain"
+                className="max-w-[65%] max-h-[65%] object-contain"
               />
             </div>
           </div>

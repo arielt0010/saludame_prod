@@ -30,6 +30,7 @@ const Layout = () => {
     '/createClient': 'Agregar Asegurado',
     '/create-user': 'Crear Usuario',
     '/login': 'Iniciar Sesión',
+    '/downloadRecibo': 'Descargar recibo de pago'
   };
 
   const getTitle = (pathname) => {

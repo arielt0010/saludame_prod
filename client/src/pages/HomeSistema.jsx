@@ -71,7 +71,7 @@ const HomeSistema = () => {
     axios.get('http://localhost:8081/pagosCantidad')
       .then(res => {
         if(res.status === 200){
-          const cantidadPagos = res.data[0].total -1;
+          const cantidadPagos = res.data[0].total;
           console.log(cantidadPagos);
           if (cantidadPagos > 0) {
             toast.info(`Hay ${cantidadPagos} pago(s) pendiente(s) de aprobación.`);

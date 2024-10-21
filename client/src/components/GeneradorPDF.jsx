@@ -74,8 +74,6 @@ const DocumentoPDF = async (nro, name, cash, day, month, year, codigo_alumno, cu
     { label: 'La suma de', value: ConversorNumeros.convertir(cash), y: page.getHeight() - logoHeight - 60 - (3 * lineHeight) },
     { label: 'Por concepto de', value: 'ASISTENCIA MEDICA DE EMERGENCIA', y: page.getHeight() - logoHeight - 60 - (4 * lineHeight) },
     { label: 'Gestion', value: anioseguro, y: page.getHeight() - logoHeight - 60 - (5 * lineHeight) },
-    { label: 'Código', value: codigo_alumno.toUpperCase(), y: page.getHeight() - logoHeight - 60 - (6 * lineHeight) },
-    { label: 'Curso', value: curso_alumno.toUpperCase(), y: page.getHeight() - logoHeight - 60 - (7 * lineHeight) },
   ];
 
   content.forEach(({ label, value, y }) => {

@@ -13,6 +13,10 @@ const Home = () => {
     }
   }, [navigate]);
 
+  useEffect(() => { 
+    document.title = "SaludAME - Inicio";
+}, []);
+
   return (
     <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-6 space-y-6">
       <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-4" />
@@ -26,6 +30,11 @@ const Home = () => {
         <Link to="/seguro">
           <button className="bg-[#009ab2] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] transition-colors duration-200 w-full">
             Pagar seguro
+          </button>
+        </Link>
+        <Link to="/downloadRecibo">
+          <button className="bg-[#00afcb] text-white px-6 py-3 rounded-md hover:bg-[#007a8a] transition-colors duration-200 w-full">
+            Descargar recibo
           </button>
         </Link>
       </div>

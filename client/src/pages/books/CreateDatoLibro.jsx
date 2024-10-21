@@ -15,16 +15,18 @@ const CreateDatoLibro = () => {
     const [apellidoPaterno, setApellidoPaterno] = useState('');
     const [apellidoMaterno, setApellidoMaterno] = useState('');
     const [cedula, setCedula] = useState(''); 
-    const [criterioBusqueda, setCriterioBusqueda] = useState('nombre');
+    const [criterioBusqueda, setCriterioBusqueda] = useState('cedula');
     const [cliente, setCliente] = useState(null);
     const [fechaAtendido, setFechaAtendido] = useState('');
-    const [diagnostico, setDiagnostico] = useState('');
+    const [diagnostico, setDiagnostico] = useState([]);
     const [tratamiento, setTratamiento] = useState('');
     const [observaciones, setObservaciones] = useState('');
     const [mensaje, setMensaje] = useState('');
     const [error, setError] = useState('');
     const [uid, setUid] = useState(null);
     const [mesLibro, setMesLibro] = useState('');
+     
+    const [date, setDate] = useState('');
     const [maxDate, setMaxDate] = useState('');
     const [minDate, setMinDate] = useState('');
     const [fieldErrors, setFieldErrors] = useState({}); // Nuevo estado para errores de campo
@@ -40,6 +42,22 @@ const CreateDatoLibro = () => {
                 console.error('Invalid token');
             }
         }
+    }, []);
+
+    useEffect(() => {
+        const today = new Date();
+        const date1 = today.toISOString().split('T')[0];
+        setDate(date1);
+    }, []);
+
+    useEffect(() => {
+        axios.get('http://localhost:8081/getDiagnosticos')
+            .then(response => {
+                setDiagnostico(response.data);
+            })
+            .catch(error => {
+                console.error("Hubo un error al obtener los diagnosticos:", error);
+            });
     }, []);
 
     useEffect(() => {
@@ -235,21 +253,25 @@ const CreateDatoLibro = () => {
                     <h2 className='text-2xl font-bold text-[#063255] mb-4'>Agregar datos para {cliente.nombre} {cliente.apellidoPaterno} {cliente.apellidoMaterno}</h2>
                     <input
                         required
+                        disabled
                         type="date"
-                        max={maxDate}
-                        min={minDate}
-                        value={fechaAtendido}
+                        value={date}
                         onChange={(e) => setFechaAtendido(e.target.value)}
                         className={`w-full p-3 border ${fieldErrors.fechaAtendido ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2]`}
                     />
-                    <input
-                        required
-                        type="text"
-                        placeholder="Diagnóstico"
-                        value={diagnostico}
-                        onChange={(e) => setDiagnostico(e.target.value)}
-                        className={`w-full p-3 border ${fieldErrors.diagnostico ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#009ab2]`}
-                    />
+                <select
+                    name="diagnostico"
+                    value={diagnostico}
+                    onChange={(e) => setDiagnostico(e.target.value)}
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.diagnostico ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
+                    
+                >
+                    {diagnostico.map(diagnostico => (
+                        <option key={diagnostico.diagId} value={diagnostico.nombreDiagnostico}>
+                            {diagnostico.nombreDiagnostico}
+                        </option>
+                    ))}
+                </select>
                     <input
                         required
                         type="text"

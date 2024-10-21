@@ -13,8 +13,11 @@ const AddClientForm = () => {
         ci: '',
         fechaNacimiento: '',
         colegio: '',
-        curso: '',
-        uidFK1: 26  
+        uidFK1: 26,
+        sexo: '',
+        tipoDeSangre: '',
+        alergias: '',
+        enfermedadesBase: ''  
     });
     const [colegios, setColegios] = useState([]);
     const [fieldErrors, setFieldErrors] = useState({}); // Nuevo estado para errores de campo
@@ -30,6 +33,10 @@ const AddClientForm = () => {
                 console.error('Invalid token');
             }
         }
+    }, []);
+
+    useEffect(() => { 
+        document.title = "Agregar Asegurado";
     }, []);
 
     useEffect(() => {
@@ -66,7 +73,7 @@ const AddClientForm = () => {
         const errors = {};
         // Verificar campos requeridos
         for (const key in formData) {
-            if (!formData[key]) {
+            if (!formData[key] ) {
                 errors[key] = true;
             }
         }
@@ -77,7 +84,7 @@ const AddClientForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateFields()) {
-            console.log("Por favor, completa todos los campos requeridos.");
+            alert("Por favor, completa todos los campos requeridos.");
             return; // No procede si hay campos vacíos
         }
 
@@ -104,7 +111,6 @@ const AddClientForm = () => {
                     value={formData.nombre}
                     onChange={handleChange}
                     className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.nombre ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    required
                 />
             </div>
 
@@ -116,7 +122,7 @@ const AddClientForm = () => {
                     value={formData.apellidoPaterno}
                     onChange={handleChange}
                     className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.apellidoPaterno ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    required
+                    
                 />
             </div>
 
@@ -128,7 +134,7 @@ const AddClientForm = () => {
                     value={formData.apellidoMaterno}
                     onChange={handleChange}
                     className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.apellidoMaterno ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    required
+                    
                 />
             </div>
 
@@ -140,7 +146,7 @@ const AddClientForm = () => {
                     value={formData.ci}
                     onChange={handleChange}
                     className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.ci ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    required
+                    
                 />
             </div>
 
@@ -152,7 +158,62 @@ const AddClientForm = () => {
                     value={formData.fechaNacimiento}
                     onChange={handleChange}
                     className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.fechaNacimiento ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    required
+                    
+                />
+            </div>
+
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Sexo:</label>
+                <select
+                    name="sexo"
+                    value={formData.sexo}
+                    onChange={handleChange}
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.sexo ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
+                    
+                >
+                <option value="">Seleccione sexo</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+                </select>
+            </div>
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Tipo de Sangre:</label>
+                <select
+                    name="tipoDeSangre"
+                    value={formData.tipoDeSangre}
+                    onChange={handleChange}
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.tipoDeSangre ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
+                    
+                >
+                <option value="">Seleccione tipo de sangre</option>
+                <option value="A RH+">A RH+</option>
+                <option value="A RH-">A RH-</option>
+                <option value="B RH+">B RH-</option>
+                <option value="B RH-">B RH-</option>
+                <option value="AB RH+">AB RH-</option>
+                <option value="AB RH-">AB RH-</option>
+                <option value="O RH+">O RH+</option>
+                <option value="O RH-">O RH-</option>
+                </select>
+            </div>
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Alergias:</label>
+                <textarea
+                    name="alergias"
+                    value={formData.alergias}
+                    onChange={handleChange}
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.alergias ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
+                    
+                />
+            </div>
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">Enfermedades base:</label>
+                <textarea
+                    name="enfermedadesBase"
+                    value={formData.enfermedadesBase}
+                    onChange={handleChange}
+                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.enfermedadesBase ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
+                    
                 />
             </div>
 
@@ -163,7 +224,7 @@ const AddClientForm = () => {
                     value={formData.colegio}
                     onChange={handleChange}
                     className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.colegio ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    required
+                    
                 >
                     {colegios.map(colegio => (
                         <option key={colegio.cid} value={colegio.cid}>
@@ -173,17 +234,6 @@ const AddClientForm = () => {
                 </select>
             </div>
 
-            <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Curso:</label>
-                <input
-                    type="text"
-                    name="curso"
-                    value={formData.curso}
-                    onChange={handleChange}
-                    className={`mt-1 block w-full px-3 py-2 border ${fieldErrors.curso ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                    required
-                />
-            </div>
 
             <button
                 type="submit"

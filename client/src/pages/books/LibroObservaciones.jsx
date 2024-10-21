@@ -197,6 +197,7 @@ const DropdownSelection = () => {
     return (
         <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6">
             <div className="w-full max-w-2x1 bg-[#ffffff] p-6 rounded-lg shadow-lg">
+                <h1 className='text-3xl font-bold text-[#063255] text-center mb-6'>Libro de consultas médicas</h1>
                 <div className="flex flex-wrap justify-between items-center mb-4 space-y-2">
                     <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     <label className="text-[#063255] font-bold">Colegio:</label>

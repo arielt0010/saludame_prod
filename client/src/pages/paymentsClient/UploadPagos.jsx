@@ -72,19 +72,13 @@ const CancelarSeguro = () => {
 
     return (
     <div className="max-w-md mx-auto p-6 bg-white border border-gray-300 rounded-lg shadow">
-      <h1 className="text-2xl font-bold mb-6 text-center">Instrucciones</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">Instrucciones</h1>
       <p className="mb-4 text-gray-700">
         Por favor, haz una transferencia con el banco de tu preferencia:
         <br />
-        <strong>Numero de cuenta:</strong> 2502150508
-        <br />
-        <strong>Banco Ganadero</strong> 
-        <br />
-        <strong>Nombre:</strong> SaludAME SRL
-        <br />
         <strong>Monto a cancelar:</strong> {precio} bolivianos.
       </p>
-      <div className="flex justify-center mb-4">
+      <div className="flex justify-center mb-2">
         <div className="w-30 h-30 border-1 border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-500"> 
              <MostrarQR nombre_colegio={nombreColegio}/>
         </div>
@@ -109,6 +103,11 @@ const CancelarSeguro = () => {
           Siguiente
         </button>
       </div>
+      {selectedFile && (
+                <p className="mt-4 text-center text-gray-700">
+                    Imagen seleccionada: {selectedFile.name}
+                </p>
+            )}
     </div>
   );
 };

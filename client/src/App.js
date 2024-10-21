@@ -21,6 +21,7 @@ import UploadPagos from './pages/paymentsClient/UploadPagos';
 import UpdateDatosTutor from './pages/paymentsClient/UpdateDatosTutor';
 import Done from './pages/paymentsClient/Done';
 import OfflineNotification from './components/Offline';
+import DownloadRecibo from './pages/paymentsClient/DownloadRecibo';
 
 const App = () => {
   return (
@@ -46,6 +47,7 @@ const App = () => {
           <Route path='/createRegistro/:lid' element={<CreateDatoLibro />} />
           <Route path='/datosTutor/' element={<UpdateDatosTutor />} />
           <Route path='/hecho' element={<Done />} />
+          <Route path='/downloadRecibo' element={<DownloadRecibo />} />
         </Route>
       </Routes>
     </BrowserRouter>

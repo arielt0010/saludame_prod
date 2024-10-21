@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,7 +9,7 @@ const Seguro = () => {
   const [apellidoPaterno, setApellidoPaterno] = useState('');
   const [apellidoMaterno, setApellidoMaterno] = useState('');
   const [cedula, setCedula] = useState(''); // Nuevo estado para cédula
-  const [criterioBusqueda, setCriterioBusqueda] = useState('nombre'); // Nuevo estado para criterio
+  const [criterioBusqueda, setCriterioBusqueda] = useState('cedula'); // Nuevo estado para criterio
   const [cliente, setCliente] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState(''); // Para manejar el mensaje de deudas pendientes
@@ -39,7 +39,7 @@ const Seguro = () => {
       if (foundCliente) {
         const paymentResponse = await axios.get(`http://localhost:8081/check-payment-status/${foundCliente.cid}`);
         if (paymentResponse.status === 204) {
-          setMessage(paymentResponse.data.message);
+          setMessage("El asegurado no tiene deudas pendientes.");
         } else if (paymentResponse.status === 200) {
           navigate("/subirPagos", {state: {cid: foundCliente.cid}});
         }
@@ -50,10 +50,14 @@ const Seguro = () => {
     }
   };
 
+  useEffect(() => { 
+    document.title = "Paga tu seguro";
+}, []);
+
   return (
     <div className="p-6 max-w-lg mx-auto bg-white shadow-md rounded-lg">
-      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Paga tu seguro</h1>
-      <h2 className="text-lg mb-4 text-center text-gray-600">Escribe el nombre completo del asegurado o su carnet de identidad y presione buscar.</h2> 
+      <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">Paga tu seguro</h1>
+      <h2 className="text-lg mb-4 text-center text-gray-600">Escribe el carnet de identidad o el nombre completo del asegurado y presione buscar.</h2> 
       
       {/* ComboBox para seleccionar el criterio de búsqueda */}
       <select
@@ -61,8 +65,8 @@ const Seguro = () => {
         onChange={(e) => setCriterioBusqueda(e.target.value)}
         className="mb-4 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
       >
-        <option value="nombre">Nombre Completo</option>
         <option value="cedula">Carnet de Identidad</option>
+        <option value="nombre">Nombre Completo</option>
       </select>
 
       {criterioBusqueda === 'nombre' && (
@@ -123,18 +127,23 @@ const Seguro = () => {
 
       {cliente ? (
         <div className="mt-4">         
-          <p className="mb-2 text-gray-800">{message}</p>
+          <p className="mb-2 text-blue-800">{message}</p>
         </div>
       ) : error ? (
-        <div className="mt-4 text-red-500">
+        <div className="text-lg font-bold text-red-500 mt-4 text-center">
           <p className="mb-2">{error}</p>
-          <p>¿Es estudiante nuevo? 
-            <Link to="/createClient" className="text-indigo-600 hover:underline"> Agregar cliente</Link>
-          </p>
         </div>
       ) : (
         <div />
       )}
+
+      <h2 className="text-lg mt-4 text-center text-gray-600">Si es estudiante nuevo, puede registrarse <Link className="text-indigo-600 hover:underline" to="/createClient">aquí</Link>.</h2>
+
+      <Link to="/">
+          <button className="bg-[#4a4a4a] text-white px-4 py-2 rounded-md hover:bg-[#2b2b2b] transition-colors duration-200 w-full mt-6">
+            Volver al inicio
+          </button>
+      </Link>
     </div>
   );
 }

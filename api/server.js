@@ -197,7 +197,7 @@ app.get('/start', verifyUser, (req, res) => {
 })
 
 //notificar usuarios con restablecimiento de contraseña
-app.get('/usuariosConRestablecimiento', (req, res) => {
+app.get('/usuariosConRestablecimiento', verifyUser, (req, res) => {
     const q = "SELECT * FROM usuario WHERE solicitudRestablecimiento = 1";
     db.query(q, (err, result) => {
         if (err) return res.json({ Error: "Error en el servidor" });
@@ -207,7 +207,7 @@ app.get('/usuariosConRestablecimiento', (req, res) => {
 
 /* CONSULTAS USUARIOS */
 
-app.get('/users',  (req,res) => {
+app.get('/users',verifyUser,  (req,res) => {
     const q = 'select u.uid as "ID", u.nombre, u.apellidoPaterno, u.apellidoMaterno, u.usuario, r.nombreRol as "Rol", case when u.estado = 1 then "Activo" else "Inactivo" end as "Estado", case when u.solicitudRestablecimiento = 1 then "Si" else "No" end as "cambioContraseña" from usuario u join rol r on u.ridFK = r.rid;';
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
@@ -460,6 +460,18 @@ app.get('/searchClienteLibro', (req, res) => {
     });
 });
 
+//obtener diagnosticos
+app.get('/getDiagnosticos', (req, res) => {
+    const q = "SELECT * FROM diagnostico";
+    db.query(q, (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        else if (result.length > 0) {
+            return res.json(result);
+        } else {
+            res.status(404).json({ Error: 'No existen diagnosticos' });
+        }
+    });
+});
 //crear datos libro de observaciones
 app.post('/createRegistro/:lid', verifyUser, (req, res) => {
     const q = "INSERT INTO consulta_medica (`fechaAtendido`, `diagnostico`, `tratamiento`, `observaciones`, `"
@@ -593,24 +605,18 @@ app.get('/pagosFiltrados', (req, res) => {
             conditions.push(`c.apellidoMaterno LIKE ?`);
             queryParams.push(`%${apellidoMaterno}%`);
         }
-        if (estado === 1) {
-            conditions.push(`p.estado = 1`);
-            queryParams.push(1);
-        }
-        else if (estado === 0) {
-            conditions.push(`p.estado = 0`);
-            queryParams.push(0);
-        }
     } else if (tipoFiltro === 'ci') {
-        conditions.push(`c.carnetIdentidad LIKE ?`);
-        queryParams.push(`%${ci}%`);
-        if (estado === 1) {
-            conditions.push(`p.estado = 1`);
-            queryParams.push(1);
-        }else if (estado === 0) {
-            conditions.push(`p.estado = 0`);
-            queryParams.push(0);
+        if (ci) {
+            conditions.push(`c.carnetIdentidad LIKE ?`);
+            queryParams.push(`%${ci}%`);
         }
+    }
+
+    // Filtrar por estado
+    if (estado === '1') {
+        conditions.push(`p.estado = 1`);
+    } else if (estado === '0') {
+        conditions.push(`p.estado = 0`);
     }
 
     if (conditions.length > 0) {
@@ -632,10 +638,8 @@ app.get('/pagosFiltrados', (req, res) => {
             `;
             let countCondition = '';
 
-            if (tipoFiltro === 'nombre') {
-                countCondition = conditions.length > 0 ? ` WHERE ` + conditions.join(' AND ') : '';
-            } else if (tipoFiltro === 'ci') {
-                countCondition = ` WHERE c.carnetIdentidad LIKE ?`;
+            if (conditions.length > 0) {
+                countCondition = ` WHERE ` + conditions.join(' AND ');
             }
 
             db.query(countQuery + countCondition, queryParams.slice(0, queryParams.length - 2), (err, countResult) => {
@@ -655,6 +659,7 @@ app.get('/pagosFiltrados', (req, res) => {
         }
     });
 });
+
 
 
 //buscar al cliente para registrar pago 
@@ -740,7 +745,7 @@ app.get('/check-payment-status/:clientId', (req, res) => {
     const clientId = req.params.clientId;
     const currentYear = new Date().getFullYear();
 
-    const checkPaymentQuery = "SELECT p.gestion FROM pago p join cliente c on p.cidFK1 = c.cid WHERE c.cid = ? AND p.gestion = ?";
+    const checkPaymentQuery = "SELECT p.gestion FROM pago p join cliente c on p.cidFK1 = c.cid join colegio col on c.colegio = col.cid WHERE c.cid = ? AND p.gestion = ? and col.precio > 0";
     
     db.query(checkPaymentQuery, [clientId, currentYear], (err, results) => {
         if (err) {
@@ -810,8 +815,8 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
 app.post('/uploadDatosTutor',  (req, res) => {
     const { nombre, telefono, cid } = req.body;
-    const sql = 'UPDATE cliente set nombreTutor = ?, nroTelefonoTutor = ? where cid = ?';
-    db.query(sql, [nombre, telefono, cid], (err, result) => {
+    const sql = 'UPDATE cliente set nroTelefono = ? where cid = ?';
+    db.query(sql, [telefono, cid], (err, result) => {
         if (err) {
             console.error('Error al actualizar el dato:', err);
             res.status(500).json({ error: 'Error en la base de datos' });
@@ -834,9 +839,9 @@ app.get('/getColegios', (req, res) => {
 
 //insertar cliente
 app.post('/createClient', (req, res) => {
-    const { nombre, apellidoPaterno, apellidoMaterno, ci, fechaNacimiento, colegio, curso, uidFK1} = req.body;
-    const q = "INSERT INTO cliente (nombre, apellidoPaterno, apellidoMaterno, carnetIdentidad, fechaNacimiento, colegio, curso, tipoAsegurado, uidFK1, estado) VALUES (?, ?, ?, ?, ?, ?, ?, 'Asegurado', ?, '1')";
-    db.query(q, [nombre, apellidoPaterno, apellidoMaterno, ci, fechaNacimiento, colegio, curso, uidFK1], (err, result) => {
+    const { nombre, apellidoPaterno, apellidoMaterno, ci, fechaNacimiento, colegio, sexo, tipoDeSangre, alergias, enfermedadesBase, uidFK1} = req.body;
+    const q = "INSERT INTO cliente (nombre, apellidoPaterno, apellidoMaterno, carnetIdentidad, fechaNacimiento, colegio, tipoAsegurado, uidFK1, estado, sexo, tipoDeSangre, alergias, enfermedadesBase) VALUES (?, ?, ?, ?, ?, ?, 'Asegurado', ?, '1', ?, ?, ?, ?)";
+    db.query(q, [nombre, apellidoPaterno, apellidoMaterno, ci, fechaNacimiento, colegio, uidFK1, sexo, tipoDeSangre, alergias, enfermedadesBase], (err, result) => {
         if (err) {
             console.error('Error al insertar el cliente:', err);
             res.status(500).json({ error: 'Error en la base de datos' });
@@ -844,7 +849,104 @@ app.post('/createClient', (req, res) => {
         }
         res.status(201).json({ message: 'Cliente insertado correctamente', clientId: result.insertId });
     });
-  });
+});
+
+//mostrar pagos de cliente
+app.get('/showPagos', (req, res) => {
+    const limit = parseInt(req.query.limit) || 15;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+    
+    const tipoFiltro = req.query.tipo || '';
+    const nombre = req.query.nombre || '';
+    const apellidoPaterno = req.query.apellidoPaterno || '';
+    const apellidoMaterno = req.query.apellidoMaterno || '';
+    const ci = req.query.ci || '';
+
+    let q = `
+        SELECT  
+            p.pid as Id,
+            CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) AS 'Nombre',
+            c.carnetIdentidad as 'CI',
+            col.nombre AS Colegio, 
+            p.gestion AS Gestion,  
+            p.fechaPago, 
+            p.monto
+        FROM pago p
+        JOIN cliente c ON p.cidFK1 = c.cid 
+        JOIN usuario u ON p.uidFK2 = u.uid 
+        JOIN colegio col ON c.colegio = col.cid 
+        JOIN forma_pago f ON p.formaPago = f.fid `;
+
+    let conditions = [];
+    let queryParams = [];
+
+    // Filtro para el nombre o sus partes
+    if (tipoFiltro === 'nombre') {
+        if (nombre) {
+            conditions.push(`c.nombre = ?`);
+            queryParams.push(`${nombre}`);
+        }
+        if (apellidoPaterno) {
+            conditions.push(`c.apellidoPaterno = ?`);
+            queryParams.push(`${apellidoPaterno}`);
+        }
+        if (apellidoMaterno) {
+            conditions.push(`c.apellidoMaterno = ?`);
+            queryParams.push(`${apellidoMaterno}`);
+        }
+    } else if (tipoFiltro === 'ci') {
+        if (ci) {
+            conditions.push(`c.carnetIdentidad = ?`);
+            queryParams.push(`${ci}`);
+        }
+    }
+
+    // Filtrar por estado
+    conditions.push(`p.estado = 1`);
+
+
+    if (conditions.length > 0) {
+        q += ` WHERE ` + conditions.join(' AND ');
+    }
+
+    q += ` ORDER BY fechaPago DESC LIMIT ? OFFSET ?`;
+    
+    queryParams.push(limit, offset);
+
+    // Ejecuta la consulta de búsqueda con los filtros aplicados
+    db.query(q, queryParams, (err, result) => {
+        if (err) return res.json({ Error: "Error en el servidor" });
+        if (result.length > 0) {
+            const countQuery = `
+                SELECT COUNT(*) AS total 
+                FROM pago p 
+                JOIN cliente c ON p.cidFK1 = c.cid 
+            `;
+            let countCondition = '';
+
+            if (conditions.length > 0) {
+                countCondition = ` WHERE ` + conditions.join(' AND ');
+            }
+
+            db.query(countQuery + countCondition, queryParams.slice(0, queryParams.length - 2), (err, countResult) => {
+                if (err) return res.json({ Error: "Error al obtener el total de registros" });
+
+                const totalItems = countResult[0].total;
+                const totalPages = Math.ceil(totalItems / limit);
+
+                return res.status(200).json({
+                    items: result,
+                    totalPages: totalPages,
+                    currentPage: page
+                });
+            });
+        } else {
+            res.status(404).json({ Error: 'No se encontraron pagos' });
+        }
+    });
+});
+
 
 //logout
 app.get('/logout', (req,res) => {
