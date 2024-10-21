@@ -1,18 +1,21 @@
 import axios from 'axios'
 import React, { useState } from 'react'
-import {Link, useNavigate} from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../../assets/logoSaludAME.jpg'
+import { ToastContainer } from 'react-toastify';  // Importar Toastify
+import 'react-toastify/dist/ReactToastify.css';          // Importar estilos de Toastify
 
 const Login = () => {
   axios.defaults.withCredentials = true;
   const [values, setValues] = useState({
     user: "",
     password: ""
-  })
+  });
   const handleChange = e => {
-    setValues(prev=>({...prev, [e.target.name]: e.target.value}))
-  }
+    setValues(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
   const navigate = useNavigate();
+
   const handleSubmit = e => {
     e.preventDefault();
     axios.post('http://localhost:8081/login', values)
@@ -27,9 +30,11 @@ const Login = () => {
       })
       .catch(err => console.log(err));
   };
+
   const handlePasswordReset = () => {
     navigate("/reset-password");
   };
+
   return (
     <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center p-6">
       <img src={Logo} alt="Logo de la empresa" className="w-[400px] mb-6" /> 
@@ -79,8 +84,11 @@ const Login = () => {
           </Link>
         </form>
       </div>
+
+      {/* Contenedor de Toast para mostrar las notificaciones */}
+      <ToastContainer />
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

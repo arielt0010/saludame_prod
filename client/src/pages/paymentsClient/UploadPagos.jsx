@@ -76,7 +76,9 @@ const CancelarSeguro = () => {
       <p className="mb-4 text-gray-700">
         Por favor, haz una transferencia con el banco de tu preferencia:
         <br />
-        <strong>Numero de cuenta:</strong> XXXXXX
+        <strong>Numero de cuenta:</strong> 2502150508
+        <br />
+        <strong>Banco Ganadero</strong> 
         <br />
         <strong>Nombre:</strong> SaludAME SRL
         <br />

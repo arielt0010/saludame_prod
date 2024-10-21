@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
 import multer from 'multer';
+import path from 'path';
 
 const salt = 10; 
 const MAX_INTENTOS = 3;
@@ -19,6 +20,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(cookieParser());
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -86,7 +88,7 @@ const checkRole = (role) => (req, res, next) => {
     next();
   };
 
-app.post('/login', (req, res) => {
+  app.post('/login', (req, res) => {
     const q = "SELECT * FROM usuario WHERE usuario = ? AND estado = 1";
     const s = req.body.user;
 
@@ -194,13 +196,19 @@ app.get('/start', verifyUser, (req, res) => {
     return res.json({Status: "Success", name:req.name});
 })
 
+//notificar usuarios con restablecimiento de contraseña
+app.get('/usuariosConRestablecimiento', (req, res) => {
+    const q = "SELECT * FROM usuario WHERE solicitudRestablecimiento = 1";
+    db.query(q, (err, result) => {
+        if (err) return res.json({ Error: "Error en el servidor" });
+        return res.status(200).json(result);
+    });
+});
+
 /* CONSULTAS USUARIOS */
 
-app.get('/users', verifyUser, checkRole(1), (req,res) => {
-    const q = 'select u.uid as "ID", u.nombre, u.apellidoPaterno, u.apellidoMaterno,'+
-    ' u.usuario, r.nombreRol as "Rol", ' +
-    'case when u.estado = 1 then "Activo" else "Inactivo" end as "Estado" '+
-    'from usuario u join rol r on u.ridFK = r.rid';
+app.get('/users',  (req,res) => {
+    const q = 'select u.uid as "ID", u.nombre, u.apellidoPaterno, u.apellidoMaterno, u.usuario, r.nombreRol as "Rol", case when u.estado = 1 then "Activo" else "Inactivo" end as "Estado", case when u.solicitudRestablecimiento = 1 then "Si" else "No" end as "cambioContraseña" from usuario u join rol r on u.ridFK = r.rid;';
     db.query(q, (err, result) => {
         if(err) return res.json({Error: "Error inside server"});
         return res.json(result);
@@ -336,29 +344,30 @@ app.get('/anotherLibro/filter', verifyUser, (req, res) => {
     const conditions = [];
     const params = [lid];
 
-    // Si se busca por nombre completo
+    // Si se busca por nombre completo o parcial
     if (nombre || apellidoPaterno || apellidoMaterno) {
         if (nombre) {
-            conditions.push(`c.nombre = ?`);
-            params.push(nombre);
+            conditions.push(`c.nombre LIKE ?`);
+            params.push(`%${nombre}%`); // Usamos LIKE para coincidencias parciales
         }
         if (apellidoPaterno) {
-            conditions.push(`c.apellidoPaterno = ?`);
-            params.push(apellidoPaterno);
+            conditions.push(`c.apellidoPaterno LIKE ?`);
+            params.push(`%${apellidoPaterno}%`);
         }
         if (apellidoMaterno) {
-            conditions.push(`c.apellidoMaterno = ?`);
-            params.push(apellidoMaterno);
+            conditions.push(`c.apellidoMaterno LIKE ?`);
+            params.push(`%${apellidoMaterno}%`);
         }
     }
 
     // Si se busca por cédula
     if (cedula) {
-        conditions.push(`c.carnetIdentidad = ?`);
-        params.push(cedula);
+        conditions.push(`c.carnetIdentidad LIKE ?`);
+        params.push(`%${cedula}%`);
     }
 
-    const whereClause = conditions.length > 0 ? `AND (${conditions.join(' OR ')})` : '';
+    // Generar la cláusula WHERE con las condiciones
+    const whereClause = conditions.length > 0 ? `AND (${conditions.join(' AND ')})` : '';
 
     const query = `SELECT c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso as 'Curso', 
                    CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as Medico, d.fechaAtendido, 
@@ -403,6 +412,7 @@ app.get('/anotherLibro/filter', verifyUser, (req, res) => {
         });
     });
 });
+
 
 
 app.get('/getColegioIdLibro/:lid', (req, res) => {
@@ -468,6 +478,15 @@ app.post('/createRegistro/:lid', verifyUser, (req, res) => {
 
 /* CONSULTA DE PAGOS */
 
+//cantidad de pagos
+app.get('/pagosCantidad', (req, res) => {
+    const q = "SELECT COUNT(*) as total FROM pago where estado = 0";
+    db.query(q, (err, result) => {
+        if (err) return res.json({ Error: "Error en el servidor" });
+        return res.status(200).json(result);
+    });
+});
+
 //query para ver todos
 app.get('/pagos', verifyUser, (req, res) => {
     const limit = parseInt(req.query.limit) || 15;  // Tamaño de página
@@ -477,6 +496,7 @@ app.get('/pagos', verifyUser, (req, res) => {
     const q = `SELECT  
                       p.pid as Id,
                       CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) AS 'Nombre',
+                      c.carnetIdentidad as 'CI',
                       col.nombre AS Colegio, 
                       c.curso AS Curso, 
                       p.gestion AS Gestion,  
@@ -520,18 +540,24 @@ app.get('/pagos', verifyUser, (req, res) => {
     });
 });
 
-app.get('/pagosFiltrados', verifyUser, (req, res) => {
+//pagos filtrados 
+app.get('/pagosFiltrados', (req, res) => {
     const limit = parseInt(req.query.limit) || 15;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
     
     const tipoFiltro = req.query.tipo || '';
-    const valorFiltro = req.query.valor || '';
+    const nombre = req.query.nombre || '';
+    const apellidoPaterno = req.query.apellidoPaterno || '';
+    const apellidoMaterno = req.query.apellidoMaterno || '';
+    const ci = req.query.ci || '';
+    const estado = req.query.estado || '';
 
     let q = `
         SELECT  
             p.pid as Id,
             CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) AS 'Nombre',
+            c.carnetIdentidad as 'CI',
             col.nombre AS Colegio, 
             c.curso AS Curso, 
             p.gestion AS Gestion,  
@@ -550,30 +576,70 @@ app.get('/pagosFiltrados', verifyUser, (req, res) => {
         JOIN colegio col ON c.colegio = col.cid 
         JOIN forma_pago f ON p.formaPago = f.fid `;
 
+    let conditions = [];
+    let queryParams = [];
+
+    // Filtro para el nombre o sus partes
     if (tipoFiltro === 'nombre') {
-        q += `WHERE CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) LIKE ? `;
+        if (nombre) {
+            conditions.push(`c.nombre LIKE ?`);
+            queryParams.push(`%${nombre}%`);
+        }
+        if (apellidoPaterno) {
+            conditions.push(`c.apellidoPaterno LIKE ?`);
+            queryParams.push(`%${apellidoPaterno}%`);
+        }
+        if (apellidoMaterno) {
+            conditions.push(`c.apellidoMaterno LIKE ?`);
+            queryParams.push(`%${apellidoMaterno}%`);
+        }
+        if (estado === 1) {
+            conditions.push(`p.estado = 1`);
+            queryParams.push(1);
+        }
+        else if (estado === 0) {
+            conditions.push(`p.estado = 0`);
+            queryParams.push(0);
+        }
     } else if (tipoFiltro === 'ci') {
-        q += `WHERE c.carnetIdentidad LIKE ? `;
+        conditions.push(`c.carnetIdentidad LIKE ?`);
+        queryParams.push(`%${ci}%`);
+        if (estado === 1) {
+            conditions.push(`p.estado = 1`);
+            queryParams.push(1);
+        }else if (estado === 0) {
+            conditions.push(`p.estado = 0`);
+            queryParams.push(0);
+        }
     }
 
-    q += `ORDER BY fechaAgregado DESC LIMIT ? OFFSET ?`;
+    if (conditions.length > 0) {
+        q += ` WHERE ` + conditions.join(' AND ');
+    }
 
-    const valor = `%${valorFiltro}%`;
+    q += ` ORDER BY fechaAgregado DESC LIMIT ? OFFSET ?`;
+    
+    queryParams.push(limit, offset);
 
-    db.query(q, [valor, limit, offset], (err, result) => {
-        if (err) return res.json({ Error: "Error inside server" });
-        else if (result.length > 0) {
-            const countQuery = `SELECT COUNT(*) AS total FROM pago p JOIN cliente c ON p.cidFK1 = c.cid`;
+    // Ejecuta la consulta de búsqueda con los filtros aplicados
+    db.query(q, queryParams, (err, result) => {
+        if (err) return res.json({ Error: "Error en el servidor" });
+        if (result.length > 0) {
+            const countQuery = `
+                SELECT COUNT(*) AS total 
+                FROM pago p 
+                JOIN cliente c ON p.cidFK1 = c.cid 
+            `;
             let countCondition = '';
 
             if (tipoFiltro === 'nombre') {
-                countCondition = `WHERE CONCAT(c.nombre, ' ', c.apellidoPaterno, ' ', c.apellidoMaterno) LIKE ?`;
+                countCondition = conditions.length > 0 ? ` WHERE ` + conditions.join(' AND ') : '';
             } else if (tipoFiltro === 'ci') {
-                countCondition = `WHERE c.carnetIdentidad LIKE ?`;
+                countCondition = ` WHERE c.carnetIdentidad LIKE ?`;
             }
 
-            db.query(countQuery + ' ' + countCondition, [valor], (err, countResult) => {
-                if (err) return res.json({ Error: "Error fetching total count" });
+            db.query(countQuery + countCondition, queryParams.slice(0, queryParams.length - 2), (err, countResult) => {
+                if (err) return res.json({ Error: "Error al obtener el total de registros" });
 
                 const totalItems = countResult[0].total;
                 const totalPages = Math.ceil(totalItems / limit);
@@ -585,7 +651,7 @@ app.get('/pagosFiltrados', verifyUser, (req, res) => {
                 });
             });
         } else {
-            res.status(404).json({ Error: 'No existen pagos' });
+            res.status(404).json({ Error: 'No se encontraron pagos' });
         }
     });
 });
@@ -657,7 +723,17 @@ app.post('/createPayment', verifyUser, (req, res) => {
     });
 })
 
-  /* CONSULTAS PAGOS SEGURO */
+app.get('/showComprobante/:id', verifyUser, (req, res) => {
+    const id = req.params.id;
+    const q = 'SELECT comprobantePago FROM pago WHERE pid = ?';
+    const values = [id];
+    db.query(q, values, (err, result) => {
+        if (err) return res.json({ Error: "Error inside server" });
+        return res.json(result);
+    });
+})
+
+/* CONSULTAS PAGOS SEGURO */
 
 //verificar el estado de los pagos de un cliente
 app.get('/check-payment-status/:clientId', (req, res) => {

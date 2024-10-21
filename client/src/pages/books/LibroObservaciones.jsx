@@ -5,6 +5,8 @@ import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const DropdownSelection = () => {
     axios.defaults.withCredentials = true;
@@ -98,6 +100,45 @@ const DropdownSelection = () => {
             alert(err);
         }
     }
+
+    const exportToPDF = (details) => {
+        const doc = new jsPDF();
+    
+        // Título centrado
+        doc.setFontSize(18);
+        doc.text('REPORTE DE PACIENTES ATENDIDOS', 105, 10, { align: 'center' });
+    
+        // Espaciado después del título
+        doc.setFontSize(12);
+        doc.text('Fecha: ' + new Date().toLocaleDateString(), 10, 20);
+    
+        // Definir las columnas de la tabla
+        const encabezado = ['Nombre', 'Apellidos', 'Curso', 'Médico', 'Fecha de atención', 'Diagnóstico', 'Tratamiento', 'Observaciones'];
+    
+        // Convertir los detalles en el formato necesario para agregar a la tabla
+        const datos = details.map((detail) => [
+            detail.Nombre,
+            detail.Apellidos,
+            detail.Curso,
+            detail.Médico,
+            new Date(detail.fechaAtendido).toLocaleDateString(),
+            detail.Diagnóstico,
+            detail.Tratamiento,
+            detail.Observaciones,
+        ]);
+    
+        // Generar la tabla automáticamente con jsPDF-autotable
+        doc.autoTable({
+            head: [encabezado],
+            body: datos,
+            startY: 30,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' }, // Estilo para la cabecera
+        });
+    
+        // Descargar el archivo PDF
+        doc.save('Reporte_Pacientes.pdf');
+    };
 
     const exportToExcel = (details) => {
         // Crear una nueva hoja de trabajo
@@ -303,9 +344,15 @@ const DropdownSelection = () => {
                         <div className="flex justify-end mb-4">
                                 <button
                                     onClick={() => exportToExcel(details)}
-                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md mr- hover:bg-[#007a8a] transition-colors duration-200"
                                 >
                                     Exportar a Excel
+                                </button>
+                                <button
+                                    onClick={() => exportToPDF(details)}
+                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
+                                >
+                                    Exportar a PDF
                                 </button>
                             </div>
                         <table className="min-w-full border-collapse">

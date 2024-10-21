@@ -183,6 +183,7 @@ const ClienteYPago = () => {
                 type="date"
                 placeholder="Fecha de Pago"
                 value={fechaPago}
+                max={new Date()}
                 onChange={(e) => setFechaPago(e.target.value)}
                 className={`mb-2 sm:mb-0 p-2 border ${fieldErrors.fechaPago ? 'border-red-500' : 'border-gray-300'} rounded-md w-full sm:w-1/4`}
                 required

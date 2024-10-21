@@ -42,6 +42,7 @@ const Users = () => {
                   <th className="py-2 px-4 text-left">Usuario</th>
                   <th className="py-2 px-4 text-left">Rol</th>
                   <th className="py-2 px-4 text-left">Estado</th>
+                  <th className="py-2 px-4 text-left">Restablecer Contraseña?</th>
                   <th className="py-2 px-4 text-left">Accion</th>
                 </tr>
               </thead>
@@ -55,6 +56,7 @@ const Users = () => {
                     <td className="py-2 px-4">{usuario.usuario}</td>
                     <td className="py-2 px-4">{usuario.Rol}</td>
                     <td className="py-2 px-4">{usuario.Estado}</td>
+                    <td className="py-2 px-4">{usuario.cambioContraseña}</td>
                     <td className="py-2 px-4 space-x-2">
                       <Link to={`/updateUser/${usuario.ID}`}>
                         <button className="bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200">

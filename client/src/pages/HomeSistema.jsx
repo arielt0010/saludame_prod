@@ -1,12 +1,13 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState, useRef} from 'react'
+import { Link } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import {jwtDecode} from 'jwt-decode';
 import Administrador from '../pages/homepages/Administrador';
 import Medico from '../pages/homepages/Medico';
 import Secretaria from '../pages/homepages/Secretaria';
-
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const HomeSistema = () => {
   axios.defaults.withCredentials = true;
@@ -14,7 +15,8 @@ const HomeSistema = () => {
   const [message, setMessage] = useState('')
   const [name, setName] = useState('')
   const [ridFK, setRidFK] = useState(null)
-  const navigate = useNavigate();
+  const [users, setUsers] = useState([])
+  const shownNotifications = useRef(new Set()); 
 
   useEffect(()=> {
     axios.get('http://localhost:8081/start')
@@ -41,6 +43,47 @@ const HomeSistema = () => {
       }
     }
   }, []);
+
+  //notificacion de usuarios con restablecimiento de contraseña
+  useEffect(() => {
+    if(ridFK===1){axios.get('http://localhost:8081/usuariosConRestablecimiento')
+      .then(res => {
+        if(res.status === 200){
+        const usuariosRestablecer = res.data;
+        setUsers(usuariosRestablecer);
+        usuariosRestablecer.forEach(usuario => {
+          if (!shownNotifications.current.has(usuario.usuario)) {
+            toast.error(`El usuario ${usuario.usuario} ha solicitado restablecer su contraseña.`);
+            shownNotifications.current.add(usuario.usuario); // Marcar como notificado
+          }
+        });}
+        else{
+          alert("Error al cargar los datos");
+        }
+      })
+      .catch(err => alert(err))
+    }
+  }, [ridFK])
+
+  //notificacion de pagos pendientes de aprobar
+  useEffect(() => {
+  if(ridFK===1 || ridFK===3){
+    axios.get('http://localhost:8081/pagosCantidad')
+      .then(res => {
+        if(res.status === 200){
+          const cantidadPagos = res.data[0].total -1;
+          console.log(cantidadPagos);
+          if (cantidadPagos > 0) {
+            toast.info(`Hay ${cantidadPagos} pago(s) pendiente(s) de aprobación.`);
+          }
+        }
+        else{
+          alert("Error al cargar los datos");
+        }
+      })
+      .catch(err => alert(err))
+  }
+  }, [ridFK])
 
   return (
     <div>
@@ -69,6 +112,7 @@ const HomeSistema = () => {
       )}
     </div>
   </div>
+      <ToastContainer />
   </div>
   )
 }
