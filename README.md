@@ -1,4 +1,7 @@
-a development build from thesis.
+# PROGRESSIVE WEB APPLICATION TO MANAGE PATIENT CARE AT SALUDAME 
+S.R.L. MEDICAL CENTER
+
+## instructions for installing:
 
 if node throws an error, use: "npm install"
 
