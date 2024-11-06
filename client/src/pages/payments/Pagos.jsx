@@ -8,6 +8,9 @@ const Pagos = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [colegios, setColegios] = useState([]);
+  const [colegioSeleccionado, setColegioSeleccionado] = useState('');
+
   // Nuevos estados para el filtro
   const [filtroTipo, setFiltroTipo] = useState(''); // Para controlar el tipo de filtro (CI o nombre completo)
   const [ci, setCi] = useState(''); // Valor del CI
@@ -24,7 +27,7 @@ const Pagos = () => {
   const [showImageModal, setShowImageModal] = useState(false);
 
   const fetchData = (currentPage) => {
-    axios.get(`http://localhost:8081/pagos?page=${currentPage}&limit=15`)
+    axios.get(`http://localhost:8081/pagos?page=${currentPage}&limit=10`)
       .then(res => {
         setData(res.data.items);
         setTotalPages(res.data.totalPages);
@@ -35,6 +38,16 @@ const Pagos = () => {
   useEffect(() => {
     fetchData(page);
   }, [page]);
+
+  useEffect(() => {
+    axios.get('http://localhost:8081/getColegios')
+        .then(response => {
+            setColegios(response.data);
+        })
+        .catch(error => {
+            console.error("Hubo un error al obtener los colegios:", error);
+        });
+}, []);
 
 
   const handleCreatePDF = (pagos) => {
@@ -68,6 +81,10 @@ const Pagos = () => {
 
     if (filtroEstado) {
       params.estado = filtroEstado; // 'Aprobado' o 'Pendiente'
+    }
+
+    if (colegioSeleccionado) {
+      params.colegio = colegioSeleccionado;
     }
   
     if (filtroTipo === 'ci' && ci) {
@@ -103,7 +120,7 @@ const Pagos = () => {
         setData(res.data.items);
         setTotalPages(res.data.totalPages);
       })
-      .catch(err => alert('Error al aplicar el filtro: ' + err));
+      .catch(err => alert('Error al aplicar el filtro: ' + err.message));
   };
   
 
@@ -215,7 +232,22 @@ const Pagos = () => {
               <option value="0">Pendiente</option>
             </select>
         </div>
-
+{/*        <div className="flex items-center ml-4">
+            <label className="text-[#063255] font-bold">Colegio:</label>
+            <select
+              value={colegioSeleccionado}
+              onChange={(e) => setColegioSeleccionado(e.target.value)}
+              className="border border-gray-300 rounded-md p-2 ml-2"
+            >
+              <option value="">Seleccionar colegio</option>
+              {colegios.map(colegio => (
+                <option key={colegio.cid} value={colegio.cid}>
+                  {colegio.nombre}
+                </option>
+              ))}
+            </select>
+        </div>
+*/}
         <button
           onClick={handleFilter}
           className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200 mt-4 ml-4"
@@ -249,13 +281,22 @@ const Pagos = () => {
                   <td className="px-4 py-2 border">{pagos.CI}</td>
                   <td className="px-4 py-2 border">{pagos.Colegio}</td>
                   <td className="px-4 py-2 border">{pagos.Gestion}</td>
-                  <td className="px-4 py-2 border">{new Date(pagos.fechaPago).toLocaleDateString('es-ES')}</td>
+                  <td className="px-4 py-2 border">
+                  {new Date(pagos.fechaPago).toLocaleString('es-ES', {
+                    day: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false, // Cambia a true si quieres el formato de 12 horas
+                  })}
+                  </td>
                   <td className="px-4 py-2 border">{pagos.monto}</td>
                   <td className="px-4 py-2 border">{pagos.usuario}</td>
                   <td className="px-4 py-2 border">{pagos.Estado}</td>
                   <td className="px-4 py-2 border">
                     <button
-                      className='bg-[#009ab2] text-white px-3 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200 mr-2'
+                      className='bg-[#009ab2] text-white px-3 mb-2 py-1 rounded-md hover:bg-[#007a8a] transition-colors duration-200 mr-2'
                       onClick={() => handleShowImage(pagos.Id)}
                     >
                       Ver comprobante
@@ -319,9 +360,14 @@ const Pagos = () => {
           >
             Siguiente
           </button>
+          
         </div>
-      </div>
+              <>
+
+      </>
     </div>
+      </div>
+
   );
 };
 

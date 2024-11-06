@@ -102,24 +102,30 @@ const DropdownSelection = () => {
     }
 
     const exportToPDF = (details) => {
-        const doc = new jsPDF();
+        const doc = new jsPDF('landscape');
     
-        // Título centrado
+        // Configurar el título en negrita
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(18);
-        doc.text('REPORTE DE PACIENTES ATENDIDOS', 105, 10, { align: 'center' });
-    
-        // Espaciado después del título
+
+        // Título centrado con respecto a la tabla
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const title = 'REPORTE DE PACIENTES ATENDIDOS';
+        const titleX = pageWidth / 2;
+        doc.text(title, titleX, 10, { align: 'center' });
+        
+        // Espaciado después del título y fuente regular
+        doc.setFont('helvetica', 'normal'); // Vuelve a la fuente normal para el resto del contenido
         doc.setFontSize(12);
         doc.text('Fecha: ' + new Date().toLocaleDateString(), 10, 20);
     
         // Definir las columnas de la tabla
-        const encabezado = ['Nombre', 'Apellidos', 'Curso', 'Médico', 'Fecha de atención', 'Diagnóstico', 'Tratamiento', 'Observaciones'];
+        const encabezado = ['Nombre', 'Apellidos', 'Médico', 'Fecha de atención', 'Diagnóstico', 'Tratamiento', 'Observaciones'];
     
         // Convertir los detalles en el formato necesario para agregar a la tabla
         const datos = details.map((detail) => [
             detail.Nombre,
             detail.Apellidos,
-            detail.Curso,
             detail.Médico,
             new Date(detail.fechaAtendido).toLocaleDateString(),
             detail.Diagnóstico,
@@ -147,14 +153,13 @@ const DropdownSelection = () => {
         // Datos del encabezado con el título centrado
         const titulo = [['REPORTE DE PACIENTES ATENDIDOS']];
         const encabezado = [
-          ['Nombre', 'Apellidos', 'Curso', 'Médico', 'Fecha de atención', 'Diagnóstico', 'Tratamiento', 'Observaciones']
+          ['Nombre', 'Apellidos', 'Médico', 'Fecha de atención', 'Diagnóstico', 'Tratamiento', 'Observaciones']
         ];
       
         // Convertir los detalles en el formato necesario para agregar a la hoja
         const datos = details.map((detail) => [
           detail.Nombre,
           detail.Apellidos,
-          detail.Curso,
           detail.Médico,
           new Date(detail.fechaAtendido).toLocaleDateString(),
           detail.Diagnóstico,
@@ -342,26 +347,11 @@ const DropdownSelection = () => {
 
                         {/* Aquí muestra los detalles */}
                         <div className="mt-6">
-                        <div className="flex justify-end mb-4">
-                                <button
-                                    onClick={() => exportToExcel(details)}
-                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md mr- hover:bg-[#007a8a] transition-colors duration-200"
-                                >
-                                    Exportar a Excel
-                                </button>
-                                <button
-                                    onClick={() => exportToPDF(details)}
-                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200"
-                                >
-                                    Exportar a PDF
-                                </button>
-                            </div>
                         <table className="min-w-full border-collapse">
                                 <thead>
                                     <tr className="bg-[#063255] text-white">
                                         <th className="px-4 py-2 border">Nombre</th>
                                         <th className="px-4 py-2 border">Apellidos</th>
-                                        <th className="px-4 py-2 border">Curso</th>
                                         <th className="px-4 py-2 border">Médico</th>
                                         <th className="px-4 py-2 border">Fecha de atención</th>
                                         <th className="px-4 py-2 border">Diagnóstico</th>
@@ -374,9 +364,8 @@ const DropdownSelection = () => {
                                         <tr key={index} className="even:bg-gray-100">
                                                 <td key={index} className="px-4 py-2 text-center border">{detail.Nombre}</td>
                                                 <td key={index} className="px-4 py-2 text-center border">{detail.Apellidos}</td>
-                                                <td key={index} className="px-4 py-2 text-center border">{detail.Curso}</td>
                                                 <td key={index} className="px-4 py-2 text-center border">{detail.Médico}</td>
-                                                <td key={index} className="px-4 py-2 text-center border">{new Date(detail.fechaAtendido).toLocaleDateString('es-ES')}</td>
+                                                <td key={index} className="px-4 py-2 text-center border">{new Date(detail.fechaAtendido).toLocaleDateString('es-ES', {day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false})}</td>
                                                 <td key={index} className="px-4 py-2 text-center border">{detail.Diagnóstico}</td>
                                                 <td key={index} className="px-4 py-2 text-center border">{detail.Tratamiento}</td>
                                                 <td key={index} className="px-4 py-2 text-center border">{detail.Observaciones}</td>
@@ -404,6 +393,20 @@ const DropdownSelection = () => {
                                 </button>
                             </div>
                         </div>
+                                              <div className="flex justify-end mb-4">
+                                <button
+                                    onClick={() => exportToExcel(details)}
+                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md mr- hover:bg-[#007a8a] transition-colors duration-200"
+                                >
+                                    Exportar a Excel
+                                </button>
+                                <button
+                                    onClick={() => exportToPDF(details)}
+                                    className="bg-[#009ab2] text-white px-4 py-2 rounded-md hover:bg-[#007a8a] transition-colors duration-200 ml-2"
+                                >
+                                    Exportar a PDF
+                                </button>
+                            </div>
                     </div>
                 )}
             </div>

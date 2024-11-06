@@ -43,7 +43,7 @@ const ContactForm = () => {
   return (
     <div className="max-w-md mx-auto mt-10 p-4 bg-white shadow-md rounded-md">
       <h2 className="text-2xl font-bold mb-6 text-[#063255]">Datos de contacto</h2>
-      <p className="mb-4">Por favor, registra tus datos de contacto para el envío del recibo de pago</p>
+      <p className="mb-4">Por favor, registra tus datos de contacto.</p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <label className="text-[#063255] font-bold">Nombre:</label>

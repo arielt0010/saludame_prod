@@ -104,6 +104,7 @@ const AddClientForm = () => {
     return (
         <form onSubmit={handleSubmit} className="p-4 max-w-md mx-auto bg-white rounded-md shadow-md">
             <div className="mb-4">
+                <h1 className='text-3xl font-bold text-center text-[#063255] mb-3'>Agregar Asegurado</h1>
                 <label className="block text-sm font-medium text-gray-700">Nombre:</label>
                 <input
                     type="text"

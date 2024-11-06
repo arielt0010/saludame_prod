@@ -1,4 +1,4 @@
-import express from "express";
+import express, { query } from "express";
 import mysql from "mysql";
 import cors from "cors";
 import jwt from "jsonwebtoken";
@@ -325,7 +325,7 @@ app.get('/libros/filter' ,(req,res) => {
 })
 
 app.get('/libros/:lid', (req,res) => {
-    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, c.curso as 'Curso', CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as 'Médico', d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=? order by d.fechaAtendido desc";
+    const q = "select d.did as Id, c.nombre as Nombre, CONCAT(c.apellidoPaterno, ' ', c.apellidoMaterno) as Apellidos, CONCAT(u.nombre,' ',u.apellidoPaterno, ' ', u.apellidoMaterno) as 'Médico', d.fechaAtendido, d.diagnostico as 'Diagnóstico', d.tratamiento as 'Tratamiento', d.observaciones as 'Observaciones' from consulta_medica d join cliente c on d.cidFK2 = c.cid join usuario u on d.uidFK3 = u.uid join libro_consulta l on d.lidFK1 = l.lid where lid=? order by d.fechaAtendido desc";
     const id = req.params.lid;
 
     db.query(q, [id], (err, result) => {
@@ -553,7 +553,7 @@ app.get('/pagos', verifyUser, (req, res) => {
 });
 
 //pagos filtrados 
-app.get('/pagosFiltrados', (req, res) => {
+app.get('/pagosFiltrados', verifyUser, (req, res) => {
     const limit = parseInt(req.query.limit) || 15;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
@@ -564,6 +564,7 @@ app.get('/pagosFiltrados', (req, res) => {
     const apellidoMaterno = req.query.apellidoMaterno || '';
     const ci = req.query.ci || '';
     const estado = req.query.estado || '';
+    const colegio = req.query.colegio || '';
 
     let q = `
         SELECT  
@@ -617,6 +618,12 @@ app.get('/pagosFiltrados', (req, res) => {
         conditions.push(`p.estado = 1`);
     } else if (estado === '0') {
         conditions.push(`p.estado = 0`);
+    }
+
+    // Filtrar por colegio
+    if (colegio) {
+        conditions.push(`col.cid = ?`); 
+        
     }
 
     if (conditions.length > 0) {
@@ -834,6 +841,20 @@ app.get('/getColegios', (req, res) => {
     db.query(q, (err, results) => {
         if (err) return res.status(500).json({ Error: "Error en el servidor" });
         return res.status(200).json(results);
+    });
+});
+
+app.get('/getInfoCliente', (req, res) => {
+    const q = "SELECT * FROM cliente WHERE cid = ?";
+    const id = req.params.id;
+
+    db.query(q, [id], (err, result) => {
+        if (err) return res.status(500).json({ Error: "Error en el servidor" });
+        else if (result.length > 0) {            
+            return res.status(200).json(result);
+        } else {
+            res.status(404).json({ Error: 'No existen datos' });
+        }
     });
 });
 

@@ -26,7 +26,7 @@ const OfflineNotification = () => {
 
   return (
     <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-blue-400 text-gray-800 py-2 px-4 rounded-lg shadow-lg z-50 text-sm flex justify-between items-center">
-      <p>Estás sin conexión</p>
+      <p className='text-center 2xl:text-3xl'>Estás sin conexión.</p>
       <button 
         className="ml-4 bg-gray-800 text-white rounded-full px-2 py-1 text-xs"
         onClick={() => setShowNotification(false)}

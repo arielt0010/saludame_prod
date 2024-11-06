@@ -2,8 +2,7 @@
 const CACHE_NAME = 'my-app-cache-v1';
 const urlsToCache = [
   '/',
-  '/pagos',
-  // Añade otros recursos que quieras cachear
+  '/pagos'
 ];
 
 // Instalar el Service Worker y cachear recursos
@@ -57,7 +56,7 @@ self.addEventListener('fetch', event => {
             });
           });
         }).catch(() => {
-            // Redirige a una página offline si falla la red
+            
         })
     );
   });
