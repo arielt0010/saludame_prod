@@ -1,9 +1,10 @@
 # PROGRESSIVE WEB APPLICATION TO MANAGE PATIENT CARE AT SALUDAME S.R.L. MEDICAL CENTER
 
-> ## Thesis info:
-> Name: PROGRESSIVE WEB APPLICATION TO MANAGE PATIENT CARE AT SALUDAME S.R.L. MEDICAL CENTER
-> Grade obtained: 9.25 / 10
-> Meaning: Approval with congratulations.
+## Thesis info
+
+Name: PROGRESSIVE WEB APPLICATION TO MANAGE PATIENT CARE AT SALUDAME S.R.L. MEDICAL CENTER
+Grade obtained: 9.25 / 10
+Meaning: Approval with congratulations.
 
 
 ## instructions for installing:
